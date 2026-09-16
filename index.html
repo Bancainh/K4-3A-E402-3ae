@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VLearn Tutor — CP3 (Gemini API thật, grounded theo transcript)</title>
+
+<!-- LUỒNG:
+  Đây là mô tả luồng hoạt động đầu-cuối của bản CP3 (không cần mở trình duyệt để hình dung):
+
+  0. [screen-start] Học viên mở VLearn Tutor, thấy ô nhập câu hỏi + 3 gợi ý câu hỏi mẫu
+     bấm được (điền nhanh vào ô nhập). Học viên gõ / chọn câu hỏi rồi bấm "Gửi".
+
+  1. [screen-loading] Hệ thống gọi THẬT tới Gemini API (model gemini-2.0-flash), kèm
+     system prompt chứa transcript Day 2 (sáng) làm nguồn căn cứ duy nhất. Tự động
+     chuyển màn hình khi có phản hồi (hoặc báo lỗi nếu gọi API thất bại).
+
+  2. Quyết định AI trung tâm (THẬT — Gemini tự trả về 1 trong 4 trạng thái dạng JSON):
+     a) [screen-happy-path] status="answered" — ĐỦ CĂN CỨ → trả lời kèm trích dẫn mã
+        đoạn transcript thật (vd: [T01-001]). Có nút phản hồi 👍/👎.
+        Học viên có thể bấm "Câu trả lời chưa đúng ý mình" để đi tới bước 3 (correction).
+     b) [screen-no-evidence] status="no_evidence" hoặc "out_of_scope" — KHÔNG ĐỦ CĂN CỨ
+        hoặc NGOÀI PHẠM VI → từ chối lịch sự, không bịa đặt, kèm gợi ý hành động tiếp
+        theo (hỏi TA trên Discord).
+     c) [screen-low-confidence] status="clarify" — CÂU HỎI MƠ HỒ → AI hỏi lại một câu
+        làm rõ (nội dung do Gemini sinh ra), học viên gõ câu làm rõ rồi gửi tiếp — hệ
+        thống gọi lại Gemini với cùng hội thoại để ra kết quả cuối.
+
+  3. [screen-correction] Học viên phản hồi "chưa đúng ý mình" trên câu trả lời đã nhận.
+     Hội thoại thật được tiếp tục (gửi kèm toàn bộ lịch sử hội thoại cho Gemini) ngay
+     trên cùng khung chat, AI trả lời điều chỉnh kèm trích dẫn mới.
+
+  Thanh điều hướng nhanh (Demo/TA nav bar): cố định ở trên cùng, cho phép BTC/TA
+  bấm thẳng tới bất kỳ màn hình nào trong 6 màn hình trên mà không cần đi đúng luồng.
+  Khi bấm thẳng vào 1 màn hình kết quả mà chưa có hội thoại thật nào, màn hình sẽ hiện
+  nội dung minh hoạ tĩnh (có nhãn "📌 Ví dụ minh hoạ") thay vì dữ liệu API thật.
+
+  CẤU HÌNH API KEY (xem đầu thẻ <script> ở cuối file):
+  - Cách 1: dán key vào biến API_KEY trong JS (KHÔNG commit khi đã dán key thật).
+  - Cách 2 (khuyến khích): điền GEMINI_API_KEY=... vào file .env ở thư mục gốc
+    (đã được .gitignore bỏ qua) rồi mở trang này qua local server (vd `npx serve .`),
+    trang sẽ tự đọc .env lúc tải — không cần sửa code.
+-->
+
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --border: #e0e2e7;
+    --text: #1f2430;
+    --text-dim: #6b7280;
+    --primary: #3457d5;
+    --primary-dark: #2540a8;
+    --green: #1a9e5c;
+    --green-bg: #eafbf2;
+    --red: #d0342c;
+    --red-bg: #fdecea;
+    --amber: #b8860b;
+    --amber-bg: #fff8e6;
+    --chip-bg: #eef1fb;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding-bottom: 70px;
+  }
+
+  /* ---------- Thanh điều hướng demo/TA ---------- */
+  #demo-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #111827;
+    color: #fff;
+    padding: 10px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  #demo-nav .nav-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #9ca3af;
+    margin-right: 4px;
+    white-space: nowrap;
+  }
+  #demo-nav button {
+    background: #1f2937;
+    color: #e5e7eb;
+    border: 1px solid #374151;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #demo-nav button:hover { background: #374151; }
+  #demo-nav button.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+  /* ---------- Khung ứng dụng ---------- */
+  .app-wrap {
+    max-width: 640px;
+    margin: 20px auto;
+    padding: 0 14px;
+  }
+
+  .app-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .app-header .logo {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .app-header h1 {
+    font-size: 17px;
+    margin: 0;
+  }
+  .app-header .sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin: 0;
+  }
+
+  .screen {
+    display: none;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+  .screen.visible { display: block; }
+
+  .screen h2 {
+    font-size: 15px;
+    margin: 0 0 4px;
+  }
+  .screen-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin: 0 0 16px;
+  }
+
+  /* ---------- screen-start ---------- */
+  #chat-input {
+    width: 100%;
+    min-height: 70px;
+    resize: vertical;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    margin-bottom: 10px;
+  }
+  .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .chip {
+    background: var(--chip-bg);
+    color: var(--primary-dark);
+    border: 1px solid #d6ddf5;
+    border-radius: 20px;
+    padding: 7px 12px;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+  .chip:hover { background: #dfe5fa; }
+
+  .hint-text {
+    font-size: 11.5px;
+    color: var(--text-dim);
+    margin: 0 0 16px;
+  }
+
+  .error-banner {
+    background: var(--red-bg);
+    border: 1px solid #f3c6c2;
+    color: #7f1d1d;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+
+  .btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .btn:hover { background: var(--primary-dark); }
+  .btn.secondary {
+    background: #fff;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+  }
+  .btn.secondary:hover { background: #eef1fb; }
+  .btn.ghost {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .btn.ghost:hover { background: #f2f3f5; }
+
+  /* ---------- screen-loading ---------- */
+  .loading-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 50px 10px;
+    gap: 14px;
+  }
+  .spinner {
+    width: 34px; height: 34px;
+    border: 3px solid #dbe1f5;
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-box .loading-text {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  /* ---------- Chat bubbles chung ---------- */
+  .chat-thread {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .bubble {
+    border-radius: 10px;
+    padding: 10px 13px;
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 92%;
+  }
+  .bubble.user {
+    background: var(--primary);
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 3px;
+  }
+  .bubble.ai {
+    background: #f1f2f6;
+    color: var(--text);
+    align-self: flex-start;
+    border-bottom-left-radius: 3px;
+  }
+  .bubble.ai.evidence { background: var(--green-bg); border: 1px solid #bfe8d3; }
+  .bubble.ai.no-evidence { background: var(--red-bg); border: 1px solid #f3c6c2; }
+  .bubble.ai.low-confidence { background: var(--amber-bg); border: 1px solid #eddca0; }
+
+  .citation-tag {
+    display: inline-block;
+    background: #d6f0e0;
+    color: var(--green);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin: 0 2px;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+  }
+  .status-pill.ok { background: var(--green-bg); color: var(--green); }
+  .status-pill.no { background: var(--red-bg); color: var(--red); }
+  .status-pill.ambiguous { background: var(--amber-bg); color: var(--amber); }
+
+  .feedback-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 6px;
+  }
+  .feedback-row button {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .feedback-row button:hover { background: #f2f3f5; }
+  .feedback-row button.picked { border-color: var(--primary); background: var(--chip-bg); }
+  .feedback-note {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-left: 4px;
+  }
+
+  .action-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+
+  .source-box {
+    border-top: 1px dashed var(--border);
+    margin-top: 12px;
+    padding-top: 10px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .source-box strong { color: var(--text); }
+
+  .live-tag {
+    display: inline-block;
+    font-size: 10.5px;
+    color: #9ca3af;
+    border: 1px dashed #d1d5db;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+  }
+  .live-tag.live {
+    color: #b91c1c;
+    border: 1px solid #f3c6c2;
+    background: #fff5f5;
+  }
+
+  .correction-input-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .correction-input-row input {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 13.5px;
+  }
+
+  @media (max-width: 480px) {
+    .app-wrap { margin: 10px auto; padding: 0 10px; }
+    .screen { padding: 14px; }
+    #demo-nav { gap: 6px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ THANH ĐIỀU HƯỚNG NHANH (BTC/TA) ============ -->
+<div id="demo-nav">
+  <span class="nav-label">TA/BTC nav:</span>
+  <button data-target="screen-start">1. Start</button>
+  <button data-target="screen-loading">2. Loading</button>
+  <button data-target="screen-happy-path">3. Có căn cứ</button>
+  <button data-target="screen-no-evidence">4. Không đủ căn cứ</button>
+  <button data-target="screen-low-confidence">5. Câu hỏi mơ hồ</button>
+  <button data-target="screen-correction">6. Chỉnh sửa</button>
+</div>
+
+<div class="app-wrap">
+  <div class="app-header">
+    <div class="logo">VL</div>
+    <div>
+      <h1>VLearn Tutor</h1>
+      <p class="sub">Hỏi đáp nội dung khóa học AI20K — CP3 (gọi Gemini API thật, grounded theo transcript)</p>
+    </div>
+  </div>
+
+  <!-- ============ 1. SCREEN START ============ -->
+  <div id="screen-start" class="screen visible">
+    <h2>Bắt đầu hỏi</h2>
+    <p class="screen-desc">Nhập câu hỏi về nội dung khóa học, hoặc bấm vào một gợi ý bên dưới.</p>
+
+    <div id="start-error" class="error-banner" hidden></div>
+
+    <textarea id="chat-input" placeholder="Ví dụ: Vì sao phải xác định đúng bài toán trước khi chọn công nghệ AI?"></textarea>
+
+    <div class="suggestions">
+      <button class="chip" data-fill="Vì sao kỹ năng xác định bài toán từ yêu cầu mơ hồ lại quan trọng?">
+        Vì sao kỹ năng xác định bài toán quan trọng?
+      </button>
+      <button class="chip" data-fill="Làn sóng tuyển AI engineer ở Việt Nam diễn ra như thế nào theo giảng viên?">
+        Làn sóng tuyển AI engineer ở VN ra sao?
+      </button>
+      <button class="chip" data-fill="Cái đó thì sao ạ?">
+        Câu hỏi mơ hồ (test nhánh hỏi lại)
+      </button>
+    </div>
+    <p class="hint-text">Mẹo demo: hỏi về điểm số/bài tập để test nhánh "ngoài phạm vi"; hỏi chủ đề không có trong transcript (vd: overfitting) để test nhánh "chưa đủ căn cứ".</p>
+
+    <button class="btn" id="btn-send">Gửi câu hỏi →</button>
+  </div>
+
+  <!-- ============ 2. SCREEN LOADING ============ -->
+  <div id="screen-loading" class="screen">
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <div class="loading-text">Đang gọi Gemini API và kiểm tra căn cứ trong transcript...</div>
+    </div>
+  </div>
+
+  <!-- ============ 3. SCREEN HAPPY PATH (đủ căn cứ) ============ -->
+  <div id="screen-happy-path" class="screen">
+    <span class="status-pill ok">✓ Đủ căn cứ từ tài liệu khóa học</span>
+    <span class="live-tag" id="hp-tag">📌 Ví dụ minh hoạ — bấm "Start" để hỏi thật (gọi Gemini API)</span>
+
+    <div class="chat-thread">
+      <div class="bubble user" id="hp-user-question">Vì sao kỹ năng xác định bài toán từ yêu cầu mơ hồ lại quan trọng?</div>
+      <div class="bubble ai evidence" id="hp-answer">
+        Theo transcript Day 2 (sáng), đoạn <span class="citation-tag">T01-001</span>, đây là một trong những
+        kỹ năng quan trọng và đang thiếu nhất — khả năng xác định ra một bài toán từ một yêu cầu rất mơ hồ,
+        hoặc tìm được bài toán đáng làm trong doanh nghiệp rồi bóc tách cho team phát triển.
+      </div>
+    </div>
+
+    <div class="source-box">
+      <strong>Nguồn trích dẫn:</strong> <span id="hp-sources">T01-001</span>
+    </div>
+
+    <div class="feedback-row">
+      <span style="font-size:13px; color:var(--text-dim);">Câu trả lời này hữu ích không?</span>
+      <button id="fb-up" onclick="mockFeedback('up')">👍</button>
+      <button id="fb-down" onclick="mockFeedback('down')">👎</button>
+      <span class="feedback-note" id="fb-note"></span>
+    </div>
+
+    <div class="action-row">
+      <button class="btn secondary" onclick="goToCorrection()">Câu trả lời chưa đúng ý mình</button>
+      <button class="btn ghost" onclick="startNewQuestion()">Hỏi câu khác</button>
+    </div>
+  </div>
+
+  <!-- ============ 4. SCREEN NO EVIDENCE (không đủ căn cứ / ngoài phạm vi) ============ -->
+  <div id="screen-no-evidence" class="screen">
+    <span class="status-pill no" id="ne-pill">✕ Chưa tìm thấy căn cứ trong tài liệu</span>
+    <span class="live-tag" id="ne-tag">📌 Ví dụ minh hoạ — bấm "Start" để hỏi thật (gọi Gemini API)</span>
+
+    <div class="chat-thread">
+      <div class="bubble user" id="ne-user-question">Buổi 3 nói về overfitting đúng không, cho mình ví dụ cụ thể?</div>
+      <div class="bubble ai no-evidence" id="ne-message">
+        Mình đã kiểm tra nhưng chưa tìm thấy nội dung này trong transcript đã có trong hệ thống. Mình không
+        muốn đoán để tránh đưa thông tin sai cho bạn.
+        <br><br>
+        Bạn có thể hỏi TA trên kênh Discord #hoi-dap-ai20k để được xác nhận, hoặc xem lại buổi học liên quan.
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn secondary" onclick="startNewQuestion()">Hỏi lại câu khác</button>
+      <button class="btn ghost" disabled title="Mock: mở link Discord thật ở bản triển khai đầy đủ">Mở Discord TA (mock)</button>
+    </div>
+  </div>
+
+  <!-- ============ 5. SCREEN LOW CONFIDENCE (câu hỏi mơ hồ) ============ -->
+  <div id="screen-low-confidence" class="screen">
+    <span class="status-pill ambiguous">? Câu hỏi chưa đủ rõ để trả lời chính xác</span>
+    <span class="live-tag" id="lc-tag">📌 Ví dụ minh hoạ — bấm "Start" để hỏi thật (gọi Gemini API)</span>
+
+    <div class="chat-thread">
+      <div class="bubble user" id="lc-user-question">Cái đó thì sao ạ?</div>
+      <div class="bubble ai low-confidence" id="lc-question">
+        Mình muốn giúp đúng phần bạn đang thắc mắc — bạn có thể nói rõ hơn "cái đó" là phần nội dung nào
+        trong buổi Day 2 (sáng) không?
+      </div>
+    </div>
+
+    <div class="correction-input-row">
+      <input id="lc-input" type="text" placeholder="Nhập câu làm rõ..." />
+      <button class="btn" id="btn-lc-send">Gửi</button>
+    </div>
+  </div>
+
+  <!-- ============ 6. SCREEN CORRECTION (chỉnh sửa / hỏi lại) ============ -->
+  <div id="screen-correction" class="screen">
+    <span class="status-pill ambiguous">↺ Học viên phản hồi chưa đúng ý</span>
+    <span class="live-tag" id="corr-tag">📌 Ví dụ minh hoạ — bấm "Start" để hỏi thật (gọi Gemini API)</span>
+
+    <div class="chat-thread" id="correction-thread">
+      <div class="bubble ai low-confidence">
+        📌 Chưa có hội thoại thật nào — đây là màn hình minh hoạ. Hãy hỏi ở màn hình Start trước, rồi bấm
+        "Câu trả lời chưa đúng ý mình" để thử luồng chỉnh sửa thật với Gemini.
+      </div>
+    </div>
+
+    <div class="correction-input-row">
+      <input id="correction-input" type="text" placeholder="Nhập làm rõ, ví dụ: mình muốn hỏi theo hướng khác" />
+      <button class="btn" onclick="submitCorrection()">Gửi</button>
+    </div>
+
+    <div class="action-row">
+      <button class="btn ghost" onclick="startNewQuestion()">Bắt đầu câu hỏi mới</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ============================================================
+  // CP3 — Cấu hình gọi Gemini API thật (thay cho MOCK_ROUTES của CP2)
+  // ============================================================
+
+  // THAY API KEY CỦA BẠN VÀO ĐÂY - KHÔNG COMMIT KEY THẬT LÊN GIT
+  // Cách 1 (nhanh nhất, mở file này trực tiếp bằng trình duyệt qua file://):
+  //   dán API key Gemini vào biến API_KEY bên dưới. Đừng commit file khi đã dán key thật.
+  // Cách 2 (khuyến khích, khi chạy qua local server, vd `npx serve .` hoặc `python -m http.server`):
+  //   mở file .env ở thư mục gốc repo (đã có sẵn, đã được .gitignore bỏ qua),
+  //   điền dòng GEMINI_API_KEY=xxx — trang sẽ tự đọc file này lúc tải, không cần sửa code.
+  let API_KEY = "";
+
+  const GEMINI_MODEL = "gemini-3.6-flash";
+  const GEMINI_ENDPOINT =
+    "https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent";
+  const GEMINI_TIMEOUT_MS = 20000;
+
+  // Transcript thật (Day 2 sáng — Xác định bài toán kinh doanh cho AI).
+  // Nguồn: data/vlearn-pack/transcript/transcript-01-clean.md (transcript gốc: transcript_2/01.md).
+  // Đây là NGUỒN CĂN CỨ DUY NHẤT Gemini được phép dùng để trả lời ở CP3.
+  const TRANSCRIPT_CONTEXT =
+`# Transcript bài giảng (bản sạch) — Day 2 (sáng) — Xác định bài toán kinh doanh cho AI
+
+> Nguồn: transcript_2/01.md (bản ASR thô) · Định vị buổi: Day 2 (sáng) — Xác định bài toán kinh doanh cho AI — độ tin cậy: cao (khớp title bài học trong chatlog tutor)
+> Quy ước: [Txx-NNN] là mã đoạn dùng để trích dẫn.
+
+## Kỹ năng xác định bài toán từ yêu cầu mơ hồ
+
+[T01-001] Một trong những kỹ năng mình nghĩ quan trọng và đang cần nhất — đặc biệt ở các công ty muốn đưa AI vào ứng dụng — là khả năng xác định ra một bài toán từ một yêu cầu rất mơ hồ, hoặc khi các bạn tham gia vào một doanh nghiệp thì tìm được bài toán đáng để làm, sau đấy bóc tách nó ra cho team development phát triển. Theo quan sát của mình, đấy là một trong những vị trí đang rất thiếu.
+
+[T01-002] Trong khoảng hai năm trở lại đây, sau làn sóng AI, các công ty có áp lực phải đưa AI vào tổ chức của mình. Ở Việt Nam mình quan sát thấy có một làn sóng đầu tiên là các công ty tuyển rất nhiều AI engineer, khoảng 2024 và 2025. Họ đặt ra một câu hỏi "bây giờ tôi muốn AI cho doanh nghiệp", và việc đầu tiên là họ tuyển — mình thấy rất nhiều tin tuyển dụng như vậy. Nhưng cuối cùng câu chuyện là ông AI engineer đấy chỉ giải được cái bài mà đã có người đưa sẵn một đề bài cụ thể. Vấn đề ở đây là cái người đặt ra đề bài đấy thì lại không có. Không có ai chỉ ra được là trong 7749 cái việc tôi phải làm mỗi ngày, cái gì tôi nên đưa vào làm trước, cái gì tôi nên làm để tạo ra được thành quả ngay đầu tiên. Sau đấy thì nhiều công ty thấy là không hiệu quả và mất niềm tin về cách làm việc đấy.`;
+
+  const SYSTEM_PROMPT =
+`Bạn là trợ lý học tập của VLearn Tutor cho học viên khóa AI20K.
+
+Bạn CHỈ được trả lời dựa trên đoạn TRANSCRIPT dưới đây — đây là nguồn căn cứ DUY NHẤT bạn được phép dùng. Không được dùng kiến thức bên ngoài, không suy diễn, không bịa thêm nội dung không có trong transcript.
+
+===== TRANSCRIPT =====
+${TRANSCRIPT_CONTEXT}
+===== HẾT TRANSCRIPT =====
+
+QUY TẮC BẮT BUỘC:
+1. CHỈ trả lời dựa trên nội dung transcript ở trên. LUÔN trích dẫn mã đoạn dạng [Txx-NNN] cho mọi thông tin bạn đưa ra trong "answer".
+2. Nếu câu hỏi KHÔNG có căn cứ trong transcript, PHẢI trả về status "no_evidence" và nói rõ trong "message" là chưa tìm thấy thông tin trong tài liệu đã học — KHÔNG được bịa đặt hay suy diễn thêm.
+3. Nếu câu hỏi MƠ HỒ, thiếu ngữ cảnh (không đủ để xác định học viên muốn hỏi gì), trả về status "clarify" và hỏi lại đúng MỘT câu làm rõ trong "clarify_question" trước khi trả lời.
+4. Nếu câu hỏi NGOÀI PHẠM VI học thuật của transcript (vd: hỏi bài tập về nhà, hỏi điểm số, hỏi việc hành chính, chuyện ngoài lề không liên quan nội dung học), trả về status "out_of_scope", từ chối lịch sự và hướng dẫn học viên hỏi TA trên kênh Discord #hoi-dap-ai20k trong "message".
+
+ĐỊNH DẠNG BẮT BUỘC: LUÔN trả lời bằng ĐÚNG MỘT object JSON hợp lệ, KHÔNG kèm markdown, KHÔNG kèm text nào khác ngoài JSON, theo đúng schema sau:
+{
+  "status": "answered" | "no_evidence" | "clarify" | "out_of_scope",
+  "answer": string,
+  "citations": string[],
+  "clarify_question": string,
+  "message": string
+}
+("answer"/"citations" chỉ điền khi status="answered"; "clarify_question" chỉ điền khi status="clarify"; "message" chỉ điền khi status="no_evidence" hoặc "out_of_scope"; các trường không dùng thì để chuỗi rỗng "" hoặc mảng rỗng [].)`;
+
+  // ---- Đọc API key: ưu tiên .env (khi chạy qua local server), fallback về biến API_KEY ở trên ----
+  let _resolvedApiKey = null;
+  async function resolveApiKey() {
+    if (_resolvedApiKey) return _resolvedApiKey;
+
+    try {
+      const res = await fetch("./.env", { cache: "no-store" });
+      if (res.ok) {
+        const text = await res.text();
+        const match = text.match(/^GEMINI_API_KEY\s*=\s*(.+)$/m);
+        if (match && match[1].trim()) {
+          _resolvedApiKey = match[1].trim();
+          console.log("[VLearn Tutor] Đã đọc GEMINI_API_KEY từ .env");
+          return _resolvedApiKey;
+        }
+      }
+    } catch (err) {
+      // .env không đọc được (bình thường khi mở file:// trực tiếp, hoặc chưa cấu hình) - dùng fallback
+      console.log("[VLearn Tutor] Không đọc được .env (có thể do mở file:// trực tiếp), dùng biến API_KEY trong JS.");
+    }
+
+    if (API_KEY && API_KEY.trim()) {
+      _resolvedApiKey = API_KEY.trim();
+      return _resolvedApiKey;
+    }
+
+    return null;
+  }
+
+  // ---- Gọi Gemini API thật ----
+  async function callGemini(history) {
+    const apiKey = await resolveApiKey();
+    if (!apiKey) {
+      throw new Error(
+        'Chưa cấu hình API key Gemini. Dán key vào biến API_KEY ở đầu thẻ <script> trong index.html, ' +
+        'hoặc điền GEMINI_API_KEY=... vào file .env rồi mở trang qua local server.'
+      );
+    }
+
+    const url = GEMINI_ENDPOINT + "?key=" + encodeURIComponent(apiKey);
+    const requestBody = {
+      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      contents: history,
+      generationConfig: {
+        temperature: 0.2,
+        responseMimeType: "application/json"
+      }
+    };
+
+    console.log("[VLearn Tutor][Gemini][request]", { model: GEMINI_MODEL, history: history });
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(function () { controller.abort(); }, GEMINI_TIMEOUT_MS);
+
+    let res;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal
+      });
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err.name === "AbortError") {
+        throw new Error("Yêu cầu tới Gemini bị timeout (quá " + (GEMINI_TIMEOUT_MS / 1000) + " giây). Vui lòng thử lại.");
+      }
+      throw new Error("Không thể kết nối tới Gemini API (mạng/CORS): " + err.message);
+    }
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      let detail = "";
+      try { detail = JSON.stringify(await res.json()); } catch (_) { /* ignore */ }
+      console.error("[VLearn Tutor][Gemini][error response]", res.status, detail);
+
+      if (res.status === 429) {
+        throw new Error("Gemini API báo lỗi rate limit (429) — bạn đã gọi quá nhiều request, vui lòng đợi rồi thử lại.");
+      }
+      if (res.status === 400 || res.status === 403) {
+        throw new Error("Gemini API từ chối request (mã " + res.status + ") — khả năng API key sai/thiếu quyền. Chi tiết: " + detail);
+      }
+      throw new Error("Gemini API lỗi (mã " + res.status + "). Chi tiết: " + detail);
+    }
+
+    const data = await res.json();
+    console.log("[VLearn Tutor][Gemini][response]", data);
+
+    const rawText = data && data.candidates && data.candidates[0] && data.candidates[0].content &&
+      data.candidates[0].content.parts && data.candidates[0].content.parts[0] &&
+      data.candidates[0].content.parts[0].text;
+
+    if (!rawText) {
+      console.error("[VLearn Tutor][Gemini][unexpected shape]", data);
+      throw new Error("Gemini trả về dữ liệu không đúng định dạng mong đợi (thiếu candidates[0].content.parts[0].text).");
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(rawText);
+    } catch (err) {
+      console.error("[VLearn Tutor][Gemini][json parse error]", err, rawText);
+      throw new Error("Không thể phân tích JSON từ câu trả lời của Gemini. Nội dung thô: " + rawText.slice(0, 300));
+    }
+
+    if (!parsed || ["answered", "no_evidence", "clarify", "out_of_scope"].indexOf(parsed.status) === -1) {
+      console.error("[VLearn Tutor][Gemini][invalid status]", parsed);
+      throw new Error("Gemini trả về status không hợp lệ: " + (parsed && parsed.status));
+    }
+
+    return parsed;
+  }
+
+  // ---- Helpers hiển thị ----
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str == null ? "" : String(str);
+    return div.innerHTML;
+  }
+  function highlightCitations(html) {
+    return html.replace(/\[T\d{2}-\d{3}\]/g, function (m) {
+      return '<span class="citation-tag">' + m.slice(1, -1) + "</span>";
+    });
+  }
+  function markLive(tagId, text) {
+    const el = document.getElementById(tagId);
+    el.textContent = text || "🔴 LIVE — Gemini API (grounded theo transcript Day 2 sáng)";
+    el.classList.add("live");
+  }
+
+  // ---- State hội thoại (Gemini "contents" format, tiếp nối qua các lượt hỏi lại/chỉnh sửa) ----
+  let conversationHistory = [];
+  let originQuestion = "";
+  let lastAnsweredSnapshot = null; // { question, answerHtml } - dùng để mồi màn hình correction
+
+  function resetConversation() {
+    conversationHistory = [];
+    originQuestion = "";
+    lastAnsweredSnapshot = null;
+  }
+
+  function startNewQuestion() {
+    resetConversation();
+    goTo("screen-start");
+  }
+
+  function goTo(id) {
+    document.querySelectorAll(".screen").forEach(function (el) {
+      el.classList.remove("visible");
+    });
+    document.getElementById(id).classList.add("visible");
+
+    document.querySelectorAll("#demo-nav button").forEach(function (btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-target") === id);
+    });
+
+    window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  }
+
+  function showStartError(msg) {
+    const el = document.getElementById("start-error");
+    el.textContent = "⚠️ " + msg;
+    el.hidden = false;
+  }
+  function hideStartError() {
+    document.getElementById("start-error").hidden = true;
+  }
+
+  // ---- screen-start: gợi ý câu hỏi tự điền ----
+  document.querySelectorAll(".chip").forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      document.getElementById("chat-input").value = chip.getAttribute("data-fill");
+    });
+  });
+
+  // ---- Gọi Gemini với conversationHistory hiện tại, rẽ nhánh theo status trả về ----
+  async function runTurn() {
+    hideStartError();
+    goTo("screen-loading");
+    try {
+      const parsed = await callGemini(conversationHistory);
+      conversationHistory.push({ role: "model", parts: [{ text: JSON.stringify(parsed) }] });
+      handleParsedResponse(parsed);
+    } catch (err) {
+      console.error("[VLearn Tutor] Lỗi khi gọi Gemini:", err);
+      showStartError(err.message || String(err));
+      goTo("screen-start");
+    }
+  }
+
+  function handleParsedResponse(parsed) {
+    if (parsed.status === "answered") {
+      renderHappyPath(parsed);
+      goTo("screen-happy-path");
+    } else if (parsed.status === "clarify") {
+      renderLowConfidence(parsed);
+      goTo("screen-low-confidence");
+    } else {
+      renderNoEvidence(parsed, parsed.status);
+      goTo("screen-no-evidence");
+    }
+  }
+
+  function renderHappyPath(parsed) {
+    document.getElementById("hp-user-question").textContent = originQuestion || "(không rõ câu hỏi)";
+    const answerHtml = highlightCitations(escapeHtml(parsed.answer || ""));
+    document.getElementById("hp-answer").innerHTML = answerHtml;
+    const citations = Array.isArray(parsed.citations) ? parsed.citations : [];
+    document.getElementById("hp-sources").textContent = citations.length ? citations.join(", ") : "(không có)";
+    markLive("hp-tag");
+    document.getElementById("fb-up").classList.remove("picked");
+    document.getElementById("fb-down").classList.remove("picked");
+    document.getElementById("fb-note").textContent = "";
+    lastAnsweredSnapshot = { question: originQuestion, answerHtml: answerHtml };
+    console.log("[VLearn Tutor] Câu hỏi:", originQuestion, "| Trả lời:", parsed.answer, "| Trích dẫn:", citations);
+  }
+
+  function renderNoEvidence(parsed, status) {
+    const pill = document.getElementById("ne-pill");
+    pill.textContent = status === "out_of_scope"
+      ? "✕ Câu hỏi ngoài phạm vi học thuật"
+      : "✕ Chưa tìm thấy căn cứ trong tài liệu";
+    document.getElementById("ne-user-question").textContent = originQuestion || "(không rõ câu hỏi)";
+    document.getElementById("ne-message").innerHTML = escapeHtml(parsed.message || "Mình chưa tìm thấy thông tin phù hợp trong tài liệu đã học.").replace(/\n/g, "<br>");
+    markLive("ne-tag");
+    console.log("[VLearn Tutor] Câu hỏi:", originQuestion, "| Kết quả:", status, "| Thông điệp:", parsed.message);
+  }
+
+  function renderLowConfidence(parsed) {
+    document.getElementById("lc-user-question").textContent = originQuestion || "(không rõ câu hỏi)";
+    document.getElementById("lc-question").textContent = parsed.clarify_question || "Bạn có thể nói rõ hơn câu hỏi của mình không?";
+    markLive("lc-tag");
+    document.getElementById("lc-input").value = "";
+    console.log("[VLearn Tutor] Câu hỏi:", originQuestion, "| AI hỏi lại:", parsed.clarify_question);
+  }
+
+  // ---- screen-start -> screen-loading -> gọi Gemini thật -> rẽ nhánh ----
+  document.getElementById("btn-send").addEventListener("click", function () {
+    const question = document.getElementById("chat-input").value.trim();
+    if (!question) return;
+    resetConversation(); // bấm "Gửi" ở Start luôn bắt đầu một hội thoại mới
+    originQuestion = question;
+    conversationHistory.push({ role: "user", parts: [{ text: question }] });
+    runTurn();
+  });
+
+  // ---- screen-low-confidence: gửi câu làm rõ -> gọi lại Gemini với cùng hội thoại ----
+  document.getElementById("btn-lc-send").addEventListener("click", function () {
+    const input = document.getElementById("lc-input");
+    const text = input.value.trim();
+    if (!text) return;
+    conversationHistory.push({ role: "user", parts: [{ text: text }] });
+    runTurn();
+  });
+
+  // ---- screen-happy-path: phản hồi 👍/👎 (vẫn là tương tác UI cục bộ, không gọi API) ----
+  function mockFeedback(type) {
+    document.getElementById("fb-up").classList.toggle("picked", type === "up");
+    document.getElementById("fb-down").classList.toggle("picked", type === "down");
+    document.getElementById("fb-note").textContent =
+      type === "up" ? "Đã ghi nhận, cảm ơn bạn!" : "Đã ghi nhận, mình sẽ cải thiện.";
+  }
+
+  // ---- screen-happy-path -> screen-correction: mồi lại thread bằng hội thoại thật (nếu có) ----
+  function goToCorrection() {
+    const thread = document.getElementById("correction-thread");
+    thread.innerHTML = "";
+
+    if (lastAnsweredSnapshot) {
+      const qBubble = document.createElement("div");
+      qBubble.className = "bubble user";
+      qBubble.textContent = lastAnsweredSnapshot.question;
+      thread.appendChild(qBubble);
+
+      const aBubble = document.createElement("div");
+      aBubble.className = "bubble ai evidence";
+      aBubble.innerHTML = lastAnsweredSnapshot.answerHtml;
+      thread.appendChild(aBubble);
+
+      const noteBubble = document.createElement("div");
+      noteBubble.className = "bubble user";
+      noteBubble.textContent = "Câu trả lời chưa đúng ý mình";
+      thread.appendChild(noteBubble);
+
+      conversationHistory.push({
+        role: "user",
+        parts: [{ text: "Câu trả lời chưa đúng ý mình, mình cần bạn làm rõ/điều chỉnh lại." }]
+      });
+
+      const askBubble = document.createElement("div");
+      askBubble.className = "bubble ai low-confidence";
+      askBubble.textContent = "Xin lỗi bạn, mình cần nói rõ hơn — bạn muốn mình điều chỉnh điểm nào trong câu trả lời vừa rồi?";
+      thread.appendChild(askBubble);
+
+      markLive("corr-tag", "🔴 LIVE — tiếp tục hội thoại thật với Gemini");
+    } else {
+      thread.innerHTML =
+        '<div class="bubble ai low-confidence">📌 Chưa có hội thoại thật nào — đây là màn hình minh hoạ. ' +
+        'Hãy hỏi ở màn hình Start trước để thử luồng chỉnh sửa thật.</div>';
+    }
+
+    goTo("screen-correction");
+  }
+
+  // ---- screen-correction: gửi làm rõ -> gọi lại Gemini với toàn bộ lịch sử hội thoại ----
+  async function submitCorrection() {
+    const input = document.getElementById("correction-input");
+    const text = input.value.trim();
+    if (!text) return;
+
+    const thread = document.getElementById("correction-thread");
+
+    const userBubble = document.createElement("div");
+    userBubble.className = "bubble user";
+    userBubble.textContent = text;
+    thread.appendChild(userBubble);
+    input.value = "";
+    thread.scrollIntoView({ behavior: "smooth", block: "end" });
+
+    conversationHistory.push({ role: "user", parts: [{ text: text }] });
+
+    const pendingBubble = document.createElement("div");
+    pendingBubble.className = "bubble ai";
+    pendingBubble.textContent = "Đang gọi Gemini...";
+    thread.appendChild(pendingBubble);
+    thread.scrollIntoView({ behavior: "smooth", block: "end" });
+
+    try {
+      const parsed = await callGemini(conversationHistory);
+      conversationHistory.push({ role: "model", parts: [{ text: JSON.stringify(parsed) }] });
+      pendingBubble.remove();
+
+      const aiBubble = document.createElement("div");
+      if (parsed.status === "answered") {
+        aiBubble.className = "bubble ai evidence";
+        aiBubble.innerHTML = highlightCitations(escapeHtml(parsed.answer || ""));
+        lastAnsweredSnapshot = { question: originQuestion, answerHtml: aiBubble.innerHTML };
+      } else if (parsed.status === "clarify") {
+        aiBubble.className = "bubble ai low-confidence";
+        aiBubble.textContent = parsed.clarify_question || "";
+      } else {
+        aiBubble.className = "bubble ai no-evidence";
+        aiBubble.textContent = parsed.message || "";
+      }
+      thread.appendChild(aiBubble);
+      thread.scrollIntoView({ behavior: "smooth", block: "end" });
+      console.log("[VLearn Tutor][correction] Gửi:", text, "| Nhận:", parsed);
+    } catch (err) {
+      pendingBubble.remove();
+      console.error("[VLearn Tutor][correction] Lỗi:", err);
+      const errBubble = document.createElement("div");
+      errBubble.className = "bubble ai no-evidence";
+      errBubble.textContent = "⚠️ Lỗi gọi API: " + (err.message || String(err));
+      thread.appendChild(errBubble);
+      thread.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }
+
+  // ---- Thanh điều hướng demo/TA ----
+  document.querySelectorAll("#demo-nav button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      goTo(btn.getAttribute("data-target"));
+    });
+  });
+
+  // Khởi tạo trạng thái active ban đầu cho nav
+  goTo("screen-start");
+</script>
+
+</body>
+</html>

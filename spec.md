@@ -1,8 +1,3 @@
-# Template AI Spec *(spec.md — commit trước hạn chốt spec: 21:00 17/9, tại CP4 · quality bar chốt từ thời điểm nộp)*
-
-> Cấu trúc phủ đúng "SPEC 8 phần" của chương trình: Bằng chứng (§1-§2) · Lát cắt (§4) · Canvas (đính kèm CP1) · Augment/Automate (§4) · 4 đường đi của trải nghiệm (§6) · Kiểu lỗi (§5) · Kiểm thử (§7) · Phân công (§8). Hướng dẫn viết từng mục: `02-guide.md`.
-
-
 # AI SPEC — Grounded VLearn Answer · Nhóm 3ae · Zone A1
 Hướng: [x] A — VLearn  [ ] B — Trợ lý Học viên  [ ] C — Làn mở
 Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
@@ -202,8 +197,8 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
   user flow, prototype, prompt/AI integration, code, demo.
 
 - Willing users:
-  1. [Tên thật] — [vai trò]
-  2. [Tên thật] — [vai trò]
+  1. Hồ Đình Tuấn Kiệt — Học viên AI20K lớp 3A
+  2. Nguyễn X.T Giang — Học viên AI20K lớp 3A
 
 - Kế hoạch validation:
   CP5 cho ít nhất 5 người ngoài nhóm thực hiện cùng một task.

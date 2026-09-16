@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VLearn Tutor — Sơ đồ luồng (Flowchart)</title>
+
+<style>
+  :root {
+    --action-bg:#eef2ff; --action-border:#4f46e5; --action-text:#312e81;
+    --decision-bg:#fff7e0; --decision-border:#d97706; --decision-text:#7c4a03;
+    --good-bg:#e6f9ee; --good-border:#16a34a; --good-text:#14532d;
+    --bad-bg:#fdecea; --bad-border:#dc2626; --bad-text:#7f1d1d;
+    --terminal-bg:#e0f2fe; --terminal-border:#0284c7; --terminal-text:#0c4a6e;
+    --loop-bg:#f3e8ff; --loop-border:#9333ea; --loop-text:#581c87;
+    --ink:#1f2430;
+    --dim:#6b7280;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 18px 16px 30px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f5f6f8;
+    color: var(--ink);
+  }
+  .wrap { max-width: 1760px; margin: 0 auto; }
+
+  h1 { font-size: 19px; margin: 0 0 4px; }
+  .subtitle { font-size: 13px; color: var(--dim); margin: 0 0 14px; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #e0e2e7;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 12.5px;
+  }
+  .legend .item { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .swatch { width: 18px; height: 18px; border-radius: 4px; flex: none; border: 2px solid; }
+  .swatch.pill { border-radius: 9px; }
+  .swatch.diamond {
+    width: 16px; height: 16px; transform: rotate(45deg); border-radius: 2px;
+  }
+  .swatch.dashed { border-style: dashed; background: #fff; }
+
+  .diagram-scroll {
+    width: 100%;
+    overflow-x: auto;
+    background: #fff;
+    border: 1px solid #e0e2e7;
+    border-radius: 10px;
+    padding: 6px;
+  }
+  svg { display: block; width: 100%; height: auto; min-width: 1000px; }
+
+  .footnote {
+    text-align: center;
+    font-size: 12px;
+    color: var(--dim);
+    margin-top: 14px;
+    font-style: italic;
+  }
+
+  @media (max-width: 640px) {
+    h1 { font-size: 16px; }
+    svg { min-width: 1200px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Sơ đồ luồng — VLearn Tutor: trả lời có trích dẫn hay từ chối khi thiếu căn cứ</h1>
+  <p class="subtitle">Học viên hỏi nội dung khóa học → AI đánh giá độ rõ ràng và căn cứ trong transcript → trả lời kèm trích dẫn hoặc từ chối lịch sự kèm gợi ý hướng khác.</p>
+
+  <div class="legend">
+    <div class="item"><span class="swatch pill" style="background:var(--action-bg); border-color:var(--action-border);"></span> Hành động / bước xử lý</div>
+    <div class="item"><span class="swatch diamond" style="background:var(--decision-bg); border-color:var(--decision-border);"></span> Điểm quyết định của AI (chỗ soi kỹ nhất)</div>
+    <div class="item"><span class="swatch" style="background:var(--good-bg); border-color:var(--good-border);"></span> Kết quả: đủ căn cứ → trả lời kèm trích dẫn</div>
+    <div class="item"><span class="swatch" style="background:var(--bad-bg); border-color:var(--bad-border);"></span> Kết quả: không đủ căn cứ → từ chối lịch sự</div>
+    <div class="item"><span class="swatch" style="background:var(--terminal-bg); border-color:var(--terminal-border);"></span> Điểm kết thúc luồng</div>
+    <div class="item"><span class="swatch dashed" style="border-color:var(--loop-border);"></span> Đường nét đứt = vòng lặp quay lại bước 2</div>
+  </div>
+
+  <div class="diagram-scroll">
+    <svg viewBox="0 0 1680 980" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sơ đồ luồng VLearn Tutor">
+      <defs>
+        <marker id="arrow-main" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#374151"/>
+        </marker>
+        <marker id="arrow-loop" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#9333ea"/>
+        </marker>
+      </defs>
+
+      <!-- ================= ARROWS (main solid flow) ================= -->
+      <g stroke="#374151" stroke-width="2.5" fill="none" marker-end="url(#arrow-main)">
+        <path d="M230,460 L280,460" />
+        <path d="M520,460 L560,460" />
+        <path d="M800,460 L840,460" />
+        <path d="M680,550 L680,755" />
+        <path d="M960,370 L960,165" />
+        <path d="M960,550 L960,755" />
+        <path d="M1110,110 L1240,110 L1240,415" />
+        <path d="M1120,820 L1240,820 L1240,505" />
+        <path d="M1360,435 L1520,435 L1520,330" />
+        <path d="M1360,485 L1520,485 L1520,590" />
+      </g>
+
+      <!-- ================= ARROWS (dashed loop-back) ================= -->
+      <g stroke="#9333ea" stroke-width="2.2" fill="none" stroke-dasharray="7,5" marker-end="url(#arrow-loop)">
+        <path d="M530,820 L245,820 L245,435 L280,435" />
+        <path d="M1390,640 L265,640 L265,485 L280,485" />
+      </g>
+
+      <!-- ================= LINE LABELS ================= -->
+      <g font-size="12.5" font-weight="700" font-family="inherit">
+        <g>
+          <rect x="778" y="432" width="84" height="22" rx="5" fill="#fff" stroke="#e0e2e7"/>
+          <text x="820" y="447" text-anchor="middle" fill="#111827">RÕ RÀNG</text>
+        </g>
+        <g>
+          <rect x="638" y="641" width="84" height="22" rx="5" fill="#fff" stroke="#e0e2e7"/>
+          <text x="680" y="656" text-anchor="middle" fill="#111827">MƠ HỒ</text>
+        </g>
+        <g>
+          <rect x="900" y="256" width="120" height="22" rx="5" fill="#fff" stroke="#e0e2e7"/>
+          <text x="960" y="271" text-anchor="middle" fill="#166534">CÓ CĂN CỨ</text>
+        </g>
+        <g>
+          <rect x="875" y="641" width="170" height="22" rx="5" fill="#fff" stroke="#e0e2e7"/>
+          <text x="960" y="656" text-anchor="middle" fill="#991b1b">KHÔNG CÓ CĂN CỨ</text>
+        </g>
+        <g>
+          <rect x="1450" y="371" width="140" height="22" rx="5" fill="#fff" stroke="#e0e2e7"/>
+          <text x="1520" y="386" text-anchor="middle" fill="#0369a1">👍 / 👎 phản hồi</text>
+        </g>
+        <g>
+          <rect x="1440" y="526" width="160" height="22" rx="5" fill="#fff" stroke="#e0e2e7"/>
+          <text x="1520" y="541" text-anchor="middle" fill="#7e22ce">hỏi lại / sửa câu hỏi</text>
+        </g>
+        <g>
+          <rect x="317" y="809" width="140" height="22" rx="5" fill="#faf5ff" stroke="#e9d5ff"/>
+          <text x="387" y="824" text-anchor="middle" fill="#7e22ce">quay lại bước 2</text>
+        </g>
+        <g>
+          <rect x="760" y="629" width="140" height="22" rx="5" fill="#faf5ff" stroke="#e9d5ff"/>
+          <text x="830" y="644" text-anchor="middle" fill="#7e22ce">quay lại bước 2</text>
+        </g>
+      </g>
+
+      <!-- ================= NODES ================= -->
+
+      <!-- 1. Start (pill) -->
+      <g>
+        <rect x="10" y="415" width="220" height="90" rx="45" ry="45" fill="var(--action-bg)" stroke="var(--action-border)" stroke-width="2"/>
+        <text x="120" y="452" text-anchor="middle" font-size="14" font-weight="700" fill="var(--action-text)">Học viên mở chat,</text>
+        <text x="120" y="472" text-anchor="middle" font-size="14" font-weight="700" fill="var(--action-text)">gõ câu hỏi</text>
+      </g>
+
+      <!-- 2. Process -->
+      <g>
+        <rect x="280" y="415" width="240" height="90" rx="14" fill="var(--action-bg)" stroke="var(--action-border)" stroke-width="2"/>
+        <text x="400" y="452" text-anchor="middle" font-size="14" font-weight="700" fill="var(--action-text)">Hệ thống nhận</text>
+        <text x="400" y="472" text-anchor="middle" font-size="14" font-weight="700" fill="var(--action-text)">câu hỏi</text>
+      </g>
+
+      <!-- 3. Diamond 1: rõ ràng? -->
+      <g>
+        <polygon points="680,370 800,460 680,550 560,460" fill="var(--decision-bg)" stroke="var(--decision-border)" stroke-width="2.5"/>
+        <text x="680" y="437" text-anchor="middle" font-size="11" font-weight="700" fill="var(--decision-text)">🤖 AI QUYẾT ĐỊNH</text>
+        <text x="680" y="459" text-anchor="middle" font-size="14.5" font-weight="700" fill="var(--decision-text)">Câu hỏi có</text>
+        <text x="680" y="479" text-anchor="middle" font-size="14.5" font-weight="700" fill="var(--decision-text)">rõ ràng?</text>
+      </g>
+
+      <!-- 4. Clarify -->
+      <g>
+        <rect x="530" y="755" width="300" height="130" rx="14" fill="var(--action-bg)" stroke="var(--action-border)" stroke-width="2"/>
+        <text x="680" y="800" text-anchor="middle" font-size="13.5" font-weight="700" fill="var(--action-text)">AI hỏi lại 1 câu làm rõ</text>
+        <text x="680" y="822" text-anchor="middle" font-size="12" fill="var(--action-text)">(vd: "Bạn hỏi về khái niệm</text>
+        <text x="680" y="840" text-anchor="middle" font-size="12" fill="var(--action-text)">hay ví dụ ở buổi 3?")</text>
+      </g>
+
+      <!-- 5. Diamond 2: có căn cứ? -->
+      <g>
+        <polygon points="960,370 1080,460 960,550 840,460" fill="var(--decision-bg)" stroke="var(--decision-border)" stroke-width="2.5"/>
+        <text x="960" y="437" text-anchor="middle" font-size="11" font-weight="700" fill="var(--decision-text)">🤖 AI QUYẾT ĐỊNH</text>
+        <text x="960" y="459" text-anchor="middle" font-size="14.5" font-weight="700" fill="var(--decision-text)">Có căn cứ trong</text>
+        <text x="960" y="479" text-anchor="middle" font-size="14.5" font-weight="700" fill="var(--decision-text)">transcript?</text>
+      </g>
+
+      <!-- 6. Green end: có căn cứ -->
+      <g>
+        <rect x="810" y="55" width="300" height="110" rx="14" fill="var(--good-bg)" stroke="var(--good-border)" stroke-width="2"/>
+        <text x="960" y="90" text-anchor="middle" font-size="13.5" font-weight="700" fill="var(--good-text)">✅ Trả lời kèm trích dẫn</text>
+        <text x="960" y="112" text-anchor="middle" font-size="12" fill="var(--good-text)">(vd: "Theo transcript buổi 3,</text>
+        <text x="960" y="130" text-anchor="middle" font-size="12" fill="var(--good-text)">đoạn [T3-12]...")</text>
+      </g>
+
+      <!-- 7. Red end: không có căn cứ -->
+      <g>
+        <rect x="800" y="755" width="320" height="130" rx="14" fill="var(--bad-bg)" stroke="var(--bad-border)" stroke-width="2"/>
+        <text x="960" y="797" text-anchor="middle" font-size="13.5" font-weight="700" fill="var(--bad-text)">🚫 Từ chối lịch sự,</text>
+        <text x="960" y="817" text-anchor="middle" font-size="12" fill="var(--bad-text)">không bịa + gợi ý hướng khác</text>
+        <text x="960" y="837" text-anchor="middle" font-size="12" fill="var(--bad-text)">(hỏi TA trên Discord / xem lại buổi X)</text>
+      </g>
+
+      <!-- 8. Merge -->
+      <g>
+        <rect x="1120" y="415" width="240" height="90" rx="14" fill="var(--action-bg)" stroke="var(--action-border)" stroke-width="2"/>
+        <text x="1240" y="452" text-anchor="middle" font-size="14" font-weight="700" fill="var(--action-text)">Học viên nhận</text>
+        <text x="1240" y="472" text-anchor="middle" font-size="14" font-weight="700" fill="var(--action-text)">kết quả</text>
+      </g>
+
+      <!-- 9. Terminal -->
+      <g>
+        <rect x="1390" y="230" width="260" height="100" rx="14" fill="var(--terminal-bg)" stroke="var(--terminal-border)" stroke-width="2"/>
+        <text x="1520" y="272" text-anchor="middle" font-size="13.5" font-weight="700" fill="var(--terminal-text)">👍 / 👎 phản hồi</text>
+        <text x="1520" y="294" text-anchor="middle" font-size="12" fill="var(--terminal-text)">(Kết thúc luồng)</text>
+      </g>
+
+      <!-- 10. Loop box -->
+      <g>
+        <rect x="1390" y="590" width="260" height="100" rx="14" fill="var(--loop-bg)" stroke="var(--loop-border)" stroke-width="2"/>
+        <text x="1520" y="633" text-anchor="middle" font-size="13.5" font-weight="700" fill="var(--loop-text)">Hỏi lại / sửa</text>
+        <text x="1520" y="655" text-anchor="middle" font-size="13.5" font-weight="700" fill="var(--loop-text)">câu hỏi</text>
+      </g>
+
+    </svg>
+  </div>
+
+  <p class="footnote">Data giả - CP3 sẽ thay bằng AI call thật</p>
+
+</div>
+</body>
+</html>

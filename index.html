@@ -11,9 +11,12 @@
   0. [screen-start] Học viên mở VLearn Tutor, thấy ô nhập câu hỏi + 3 gợi ý câu hỏi mẫu
      bấm được (điền nhanh vào ô nhập). Học viên gõ / chọn câu hỏi rồi bấm "Gửi".
 
-  1. [screen-loading] Hệ thống gọi THẬT tới Gemini API (model gemini-2.0-flash), kèm
-     system prompt chứa transcript Day 2 (sáng) làm nguồn căn cứ duy nhất. Tự động
-     chuyển màn hình khi có phản hồi (hoặc báo lỗi nếu gọi API thất bại).
+  1. [screen-loading] Hệ thống retrieval (JS thuần, không gọi AI) chấm điểm và chọn
+     top-8 đoạn liên quan nhất trong TOÀN BỘ 6 file transcript (dựa trên
+     transcripts-data.json, sinh sẵn bằng scripts/build-transcripts.js). Nếu không có
+     đoạn nào đủ liên quan, trả thẳng "no_evidence" mà KHÔNG gọi Gemini. Ngược lại,
+     hệ thống gọi THẬT tới Gemini API kèm system prompt chứa các đoạn vừa chọn làm
+     nguồn căn cứ. Tự động chuyển màn hình khi có phản hồi (hoặc báo lỗi nếu thất bại).
 
   2. Quyết định AI trung tâm (THẬT — Gemini tự trả về 1 trong 4 trạng thái dạng JSON):
      a) [screen-happy-path] status="answered" — ĐỦ CĂN CỨ → trả lời kèm trích dẫn mã
@@ -40,6 +43,11 @@
   - Cách 2 (khuyến khích): điền GEMINI_API_KEY=... vào file .env ở thư mục gốc
     (đã được .gitignore bỏ qua) rồi mở trang này qua local server (vd `npx serve .`),
     trang sẽ tự đọc .env lúc tải — không cần sửa code.
+
+  DỮ LIỆU TRANSCRIPT: trang này load transcripts-data.json (đã build sẵn, nằm cùng
+  thư mục với index.html) chứa toàn bộ đoạn của 6 file transcript. Nếu nội dung
+  transcript trong data/vlearn-pack/transcript/ thay đổi, chạy lại:
+    node scripts/build-transcripts.js
 -->
 
 <style>
@@ -546,28 +554,17 @@
     "https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent";
   const GEMINI_TIMEOUT_MS = 20000;
 
-  // Transcript thật (Day 2 sáng — Xác định bài toán kinh doanh cho AI).
-  // Nguồn: data/vlearn-pack/transcript/transcript-01-clean.md (transcript gốc: transcript_2/01.md).
-  // Đây là NGUỒN CĂN CỨ DUY NHẤT Gemini được phép dùng để trả lời ở CP3.
-  const TRANSCRIPT_CONTEXT =
-`# Transcript bài giảng (bản sạch) — Day 2 (sáng) — Xác định bài toán kinh doanh cho AI
-
-> Nguồn: transcript_2/01.md (bản ASR thô) · Định vị buổi: Day 2 (sáng) — Xác định bài toán kinh doanh cho AI — độ tin cậy: cao (khớp title bài học trong chatlog tutor)
-> Quy ước: [Txx-NNN] là mã đoạn dùng để trích dẫn.
-
-## Kỹ năng xác định bài toán từ yêu cầu mơ hồ
-
-[T01-001] Một trong những kỹ năng mình nghĩ quan trọng và đang cần nhất — đặc biệt ở các công ty muốn đưa AI vào ứng dụng — là khả năng xác định ra một bài toán từ một yêu cầu rất mơ hồ, hoặc khi các bạn tham gia vào một doanh nghiệp thì tìm được bài toán đáng để làm, sau đấy bóc tách nó ra cho team development phát triển. Theo quan sát của mình, đấy là một trong những vị trí đang rất thiếu.
-
-[T01-002] Trong khoảng hai năm trở lại đây, sau làn sóng AI, các công ty có áp lực phải đưa AI vào tổ chức của mình. Ở Việt Nam mình quan sát thấy có một làn sóng đầu tiên là các công ty tuyển rất nhiều AI engineer, khoảng 2024 và 2025. Họ đặt ra một câu hỏi "bây giờ tôi muốn AI cho doanh nghiệp", và việc đầu tiên là họ tuyển — mình thấy rất nhiều tin tuyển dụng như vậy. Nhưng cuối cùng câu chuyện là ông AI engineer đấy chỉ giải được cái bài mà đã có người đưa sẵn một đề bài cụ thể. Vấn đề ở đây là cái người đặt ra đề bài đấy thì lại không có. Không có ai chỉ ra được là trong 7749 cái việc tôi phải làm mỗi ngày, cái gì tôi nên đưa vào làm trước, cái gì tôi nên làm để tạo ra được thành quả ngay đầu tiên. Sau đấy thì nhiều công ty thấy là không hiệu quả và mất niềm tin về cách làm việc đấy.`;
-
-  const SYSTEM_PROMPT =
+  // TRANSCRIPT_CONTEXT giờ được dựng ĐỘNG mỗi câu hỏi từ kết quả retrieveTopK()
+  // trên toàn bộ 6 file transcript (xem khối RETRIEVAL bên dưới), thay vì cố định
+  // 1 đoạn như trước. buildSystemPrompt() ghép transcriptContext vào system prompt.
+  function buildSystemPrompt(transcriptContext) {
+    return (
 `Bạn là trợ lý học tập của VLearn Tutor cho học viên khóa AI20K.
 
-Bạn CHỈ được trả lời dựa trên đoạn TRANSCRIPT dưới đây — đây là nguồn căn cứ DUY NHẤT bạn được phép dùng. Không được dùng kiến thức bên ngoài, không suy diễn, không bịa thêm nội dung không có trong transcript.
+Bạn CHỈ được trả lời dựa trên các đoạn TRANSCRIPT dưới đây — đây là nguồn căn cứ DUY NHẤT bạn được phép dùng. Các đoạn này được truy xuất tự động (retrieval) từ 6 buổi học, có thể không đầy đủ. Không được dùng kiến thức bên ngoài, không suy diễn, không bịa thêm nội dung không có trong các đoạn dưới đây.
 
-===== TRANSCRIPT =====
-${TRANSCRIPT_CONTEXT}
+===== TRANSCRIPT (các đoạn liên quan nhất tới câu hỏi) =====
+${transcriptContext}
 ===== HẾT TRANSCRIPT =====
 
 QUY TẮC BẮT BUỘC:
@@ -584,7 +581,160 @@ QUY TẮC BẮT BUỘC:
   "clarify_question": string,
   "message": string
 }
-("answer"/"citations" chỉ điền khi status="answered"; "clarify_question" chỉ điền khi status="clarify"; "message" chỉ điền khi status="no_evidence" hoặc "out_of_scope"; các trường không dùng thì để chuỗi rỗng "" hoặc mảng rỗng [].)`;
+("answer"/"citations" chỉ điền khi status="answered"; "clarify_question" chỉ điền khi status="clarify"; "message" chỉ điền khi status="no_evidence" hoặc "out_of_scope"; các trường không dùng thì để chuỗi rỗng "" hoặc mảng rỗng [].)`
+    );
+  }
+
+  // ============================================================
+  // RETRIEVAL — chọn top-K đoạn liên quan nhất trong TOÀN BỘ 6 file transcript
+  // (JS thuần, chạy trong trình duyệt, không gọi AI). Dữ liệu nguồn:
+  // transcripts-data.json, được sinh 1 lần bằng `node scripts/build-transcripts.js`
+  // từ data/vlearn-pack/transcript/transcript-0{1..6}-clean.md.
+  // ============================================================
+
+  const VN_STOPWORDS = new Set([
+    "là", "và", "có", "của", "trong", "để", "cho", "một", "các", "những", "gì", "sao",
+    "nào", "không", "thì", "mà", "với", "được", "này", "đó", "ở", "ra", "vào", "hay",
+    "hoặc", "như", "khi", "đã", "sẽ", "đang", "rất", "cũng", "còn", "nữa", "chỉ", "phải",
+    "nên", "vì", "nếu", "theo", "về", "từ", "đến", "trên", "dưới", "sau", "trước", "giữa",
+    "bạn", "mình", "ạ", "à", "nhé", "nhỉ", "hả", "ơi", "thế", "vậy", "đây", "kia", "ấy",
+    "lại", "cả", "đi", "làm", "cứ", "hãy", "xin", "ừ"
+  ]);
+
+  function normalizeText(str) {
+    return (str || "")
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]/gu, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function tokenize(str) {
+    const normalized = normalizeText(str);
+    return normalized.length ? normalized.split(" ") : [];
+  }
+
+  function extractQueryTerms(question) {
+    const tokens = tokenize(question).filter(function (t) { return !VN_STOPWORDS.has(t); });
+    const unigrams = [...new Set(tokens)];
+    const bigrams = [];
+    const trigrams = [];
+    for (let i = 0; i < tokens.length - 1; i++) {
+      bigrams.push(tokens[i] + " " + tokens[i + 1]);
+    }
+    for (let i = 0; i < tokens.length - 2; i++) {
+      trigrams.push(tokens[i] + " " + tokens[i + 1] + " " + tokens[i + 2]);
+    }
+    return { unigrams: unigrams, bigrams: [...new Set(bigrams)], trigrams: [...new Set(trigrams)] };
+  }
+
+  function hasLongWord(phrase) {
+    return phrase.split(" ").some(function (w) { return w.length >= 6; });
+  }
+
+  // Điểm mỗi đoạn = số từ khóa (đã bỏ stopword) trùng khớp; khớp cụm 2 từ tính 3 điểm,
+  // khớp cụm 3 từ tính 5 điểm (ưu tiên cao hơn khớp từ đơn = 1 điểm), nhưng chỉ khi
+  // cụm đó chứa ít nhất 1 từ dài/đặc trưng (xem hasLongWord ở trên).
+  function retrieveTopK(question, allSegments, k) {
+    k = k || 8;
+    const terms = extractQueryTerms(question);
+    if (terms.unigrams.length === 0) return [];
+
+    const scored = allSegments.map(function (seg) {
+      const padded = " " + normalizeText(seg.text) + " ";
+      let score = 0;
+      terms.unigrams.forEach(function (w) {
+        if (padded.indexOf(" " + w + " ") !== -1) {
+          // Từ dài (>= 6 ký tự) nhiều khả năng là thuật ngữ chuyên ngành đặc trưng
+          // (vd "parameter", "reinforcement") -> trọng số cao hơn từ ngắn/phổ biến.
+          score += w.length >= 6 ? 2 : 1;
+        }
+      });
+      // Cụm khớp chỉ cộng điểm khi chứa ít nhất 1 từ dài/đặc trưng (>= 6 ký tự);
+      // cụm toàn từ ngắn/phổ biến (vd "mô hình ai") không cộng thêm gì ngoài phần
+      // đã tính ở unigram, tránh cụm phổ biến lấn át từ hiếm nằm rải rác không liền cụm.
+      terms.bigrams.forEach(function (p) {
+        if (padded.indexOf(" " + p + " ") !== -1 && hasLongWord(p)) score += 3;
+      });
+      terms.trigrams.forEach(function (p) {
+        if (padded.indexOf(" " + p + " ") !== -1 && hasLongWord(p)) score += 5;
+      });
+      return { id: seg.id, text: seg.text, file: seg.file, score: score };
+    });
+
+    console.log(
+      "[VLearn Tutor][retrieval] Top 15 điểm cao nhất:",
+      scored.slice().sort(function (a, b) { return b.score - a.score; }).slice(0, 15)
+        .map(function (s) { return { id: s.id, file: s.file, score: s.score }; })
+    );
+
+    scored.sort(function (a, b) { return b.score - a.score; });
+    const topK = scored.slice(0, k);
+
+    // Không có đoạn nào đủ liên quan trong toàn bộ 6 file -> báo rỗng cho tầng gọi.
+    if (topK.length === 0 || topK[0].score < 2) {
+      return [];
+    }
+
+    return topK.filter(function (s) { return s.score > 0; });
+  }
+
+  // ---- Load transcripts-data.json (build bằng scripts/build-transcripts.js), cache lại sau lần đầu ----
+  let ALL_SEGMENTS = null;
+  let _segmentsLoadingPromise = null;
+  function ensureSegmentsLoaded() {
+    if (ALL_SEGMENTS) return Promise.resolve(ALL_SEGMENTS);
+    if (!_segmentsLoadingPromise) {
+      _segmentsLoadingPromise = fetch("./transcripts-data.json", { cache: "no-store" })
+        .then(function (res) {
+          if (!res.ok) {
+            throw new Error(
+              "Không tải được transcripts-data.json (mã " + res.status + "). " +
+              "Đã chạy `node scripts/build-transcripts.js` ở thư mục gốc repo chưa?"
+            );
+          }
+          return res.json();
+        })
+        .then(function (data) {
+          ALL_SEGMENTS = (data && data.segments) || [];
+          console.log("[VLearn Tutor] Đã load " + ALL_SEGMENTS.length + " đoạn transcript từ transcripts-data.json");
+          return ALL_SEGMENTS;
+        });
+    }
+    return _segmentsLoadingPromise;
+  }
+
+  // ---- Retrieval rồi mới gọi Gemini; nếu retrieval rỗng thì trả no_evidence luôn, không tốn API call ----
+  async function retrieveAndAnswer(history, queryText) {
+    const segments = await ensureSegmentsLoaded();
+    const query = (queryText || "").trim();
+    const retrieved = retrieveTopK(query, segments, 8);
+
+    console.log("[VLearn Tutor][retrieval] Câu hỏi:", query);
+    console.log(
+      "[VLearn Tutor][retrieval] Đoạn được chọn:",
+      retrieved.map(function (s) { return { id: s.id, file: s.file, score: s.score }; })
+    );
+
+    if (retrieved.length === 0) {
+      console.log("[VLearn Tutor][retrieval] Không có đoạn nào đạt ngưỡng liên quan trong 6 file -> bỏ qua gọi Gemini, trả no_evidence trực tiếp.");
+      return {
+        status: "no_evidence",
+        answer: "",
+        citations: [],
+        clarify_question: "",
+        message:
+          "Mình đã tìm trong toàn bộ transcript của 6 buổi học nhưng không thấy đoạn nào đủ liên quan tới câu hỏi này. " +
+          "Bạn có thể hỏi TA trên kênh Discord #hoi-dap-ai20k, hoặc thử diễn đạt lại câu hỏi theo cách khác."
+      };
+    }
+
+    const transcriptContext = retrieved
+      .map(function (s) { return s.id + " (nguồn: " + s.file + ")\n" + s.text; })
+      .join("\n\n");
+
+    return await callGemini(history, transcriptContext);
+  }
 
   // ---- Đọc API key: ưu tiên .env (khi chạy qua local server), fallback về biến API_KEY ở trên ----
   let _resolvedApiKey = null;
@@ -615,8 +765,8 @@ QUY TẮC BẮT BUỘC:
     return null;
   }
 
-  // ---- Gọi Gemini API thật ----
-  async function callGemini(history) {
+  // ---- Gọi Gemini API thật (transcriptContext do retrieveAndAnswer() dựng động từ retrieval) ----
+  async function callGemini(history, transcriptContext) {
     const apiKey = await resolveApiKey();
     if (!apiKey) {
       throw new Error(
@@ -627,7 +777,7 @@ QUY TẮC BẮT BUỘC:
 
     const url = GEMINI_ENDPOINT + "?key=" + encodeURIComponent(apiKey);
     const requestBody = {
-      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      systemInstruction: { parts: [{ text: buildSystemPrompt(transcriptContext) }] },
       contents: history,
       generationConfig: {
         temperature: 0.2,
@@ -719,11 +869,13 @@ QUY TẮC BẮT BUỘC:
   // ---- State hội thoại (Gemini "contents" format, tiếp nối qua các lượt hỏi lại/chỉnh sửa) ----
   let conversationHistory = [];
   let originQuestion = "";
+  let lastUserMessageText = ""; // tin nhắn user gần nhất - dùng làm truy vấn retrieval
   let lastAnsweredSnapshot = null; // { question, answerHtml } - dùng để mồi màn hình correction
 
   function resetConversation() {
     conversationHistory = [];
     originQuestion = "";
+    lastUserMessageText = "";
     lastAnsweredSnapshot = null;
   }
 
@@ -761,12 +913,13 @@ QUY TẮC BẮT BUỘC:
     });
   });
 
-  // ---- Gọi Gemini với conversationHistory hiện tại, rẽ nhánh theo status trả về ----
+  // ---- Retrieval + gọi Gemini với conversationHistory hiện tại, rẽ nhánh theo status trả về ----
   async function runTurn() {
     hideStartError();
     goTo("screen-loading");
     try {
-      const parsed = await callGemini(conversationHistory);
+      const query = (originQuestion + " " + lastUserMessageText).trim();
+      const parsed = await retrieveAndAnswer(conversationHistory, query);
       conversationHistory.push({ role: "model", parts: [{ text: JSON.stringify(parsed) }] });
       handleParsedResponse(parsed);
     } catch (err) {
@@ -828,6 +981,7 @@ QUY TẮC BẮT BUỘC:
     if (!question) return;
     resetConversation(); // bấm "Gửi" ở Start luôn bắt đầu một hội thoại mới
     originQuestion = question;
+    lastUserMessageText = question;
     conversationHistory.push({ role: "user", parts: [{ text: question }] });
     runTurn();
   });
@@ -837,6 +991,7 @@ QUY TẮC BẮT BUỘC:
     const input = document.getElementById("lc-input");
     const text = input.value.trim();
     if (!text) return;
+    lastUserMessageText = text;
     conversationHistory.push({ role: "user", parts: [{ text: text }] });
     runTurn();
   });
@@ -905,6 +1060,7 @@ QUY TẮC BẮT BUỘC:
     input.value = "";
     thread.scrollIntoView({ behavior: "smooth", block: "end" });
 
+    lastUserMessageText = text;
     conversationHistory.push({ role: "user", parts: [{ text: text }] });
 
     const pendingBubble = document.createElement("div");
@@ -914,7 +1070,8 @@ QUY TẮC BẮT BUỘC:
     thread.scrollIntoView({ behavior: "smooth", block: "end" });
 
     try {
-      const parsed = await callGemini(conversationHistory);
+      const query = (originQuestion + " " + text).trim();
+      const parsed = await retrieveAndAnswer(conversationHistory, query);
       conversationHistory.push({ role: "model", parts: [{ text: JSON.stringify(parsed) }] });
       pendingBubble.remove();
 
@@ -953,6 +1110,11 @@ QUY TẮC BẮT BUỘC:
 
   // Khởi tạo trạng thái active ban đầu cho nav
   goTo("screen-start");
+
+  // Preload transcripts-data.json ngay khi mở trang để câu hỏi đầu tiên không phải đợi thêm
+  ensureSegmentsLoaded().catch(function (err) {
+    console.error("[VLearn Tutor] Preload transcripts-data.json thất bại:", err);
+  });
 </script>
 
 </body>

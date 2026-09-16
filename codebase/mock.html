@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VLearn Tutor — CP2 Mockup (Clickable Flow, Mock Data)</title>
+
+<!-- LUỒNG:
+  Đây là mô tả luồng hoạt động đầu-cuối của mockup CP2 (không cần mở trình duyệt để hình dung):
+
+  0. [screen-start] Học viên mở VLearn Tutor, thấy ô nhập câu hỏi + 3 gợi ý câu hỏi mẫu
+     bấm được (điền nhanh vào ô nhập). Học viên gõ / chọn câu hỏi rồi bấm "Gửi".
+
+  1. [screen-loading] Hệ thống hiển thị trạng thái "đang xử lý" (spinner + text ngắn).
+     Đây là bước giả lập AI đang: (a) tìm tài liệu liên quan, (b) đánh giá xem tài liệu
+     có đủ căn cứ để trả lời hay không. Sau ~1 giây tự động chuyển tiếp.
+
+  2. Quyết định AI trung tâm (mô phỏng, không gọi AI thật ở CP2):
+     Dựa trên câu hỏi học viên chọn ở bước 0, hệ thống rẽ nhánh sang MỘT trong ba màn hình:
+
+     a) [screen-happy-path] ĐỦ CĂN CỨ → trả lời kèm trích dẫn rõ nguồn tài liệu
+        (vd: "Theo transcript buổi 3, đoạn [T3-12]..."). Có nút phản hồi 👍/👎.
+        Học viên có thể bấm "Câu trả lời chưa đúng ý mình" để đi tới bước 3 (correction).
+
+     b) [screen-no-evidence] KHÔNG ĐỦ CĂN CỨ → từ chối lịch sự, không bịa đặt,
+        kèm gợi ý hành động tiếp theo (hỏi TA trên Discord / xem lại buổi học liên quan).
+
+     c) [screen-low-confidence] CÂU HỎI MƠ HỒ → AI hỏi lại một câu làm rõ trước khi
+        trả lời, đưa ra các lựa chọn cụ thể để học viên bấm chọn thay vì gõ lại.
+        Sau khi học viên chọn làm rõ, hệ thống dẫn tới happy-path tương ứng.
+
+  3. [screen-correction] Học viên phản hồi "chưa đúng ý mình" trên câu trả lời đã nhận.
+     AI phản hồi ngay trong cùng khung chat: xin lỗi, hỏi lại cụ thể hơn học viên cần gì,
+     rồi đưa ra câu trả lời điều chỉnh kèm trích dẫn khác/phạm vi hẹp hơn.
+
+  Thanh điều hướng nhanh (Demo/TA nav bar): cố định ở trên cùng, cho phép BTC/TA
+  bấm thẳng tới bất kỳ màn hình nào trong 6 màn hình trên mà không cần đi đúng luồng,
+  để thuận tiện khi chấm điểm hoặc demo nhanh từng trường hợp.
+
+  Toàn bộ nội dung câu trả lời, trích dẫn, câu hỏi mẫu đều là DỮ LIỆU GIẢ (hardcode
+  trong JS, có đánh dấu "// MOCK DATA"). CP3 sẽ thay thế phần quyết định + nội dung
+  trả lời bằng lời gọi AI thật (RAG trên tài liệu khóa học thật).
+-->
+
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --border: #e0e2e7;
+    --text: #1f2430;
+    --text-dim: #6b7280;
+    --primary: #3457d5;
+    --primary-dark: #2540a8;
+    --green: #1a9e5c;
+    --green-bg: #eafbf2;
+    --red: #d0342c;
+    --red-bg: #fdecea;
+    --amber: #b8860b;
+    --amber-bg: #fff8e6;
+    --chip-bg: #eef1fb;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding-bottom: 70px;
+  }
+
+  /* ---------- Thanh điều hướng demo/TA ---------- */
+  #demo-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #111827;
+    color: #fff;
+    padding: 10px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  #demo-nav .nav-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #9ca3af;
+    margin-right: 4px;
+    white-space: nowrap;
+  }
+  #demo-nav button {
+    background: #1f2937;
+    color: #e5e7eb;
+    border: 1px solid #374151;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #demo-nav button:hover { background: #374151; }
+  #demo-nav button.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+  /* ---------- Khung ứng dụng ---------- */
+  .app-wrap {
+    max-width: 640px;
+    margin: 20px auto;
+    padding: 0 14px;
+  }
+
+  .app-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .app-header .logo {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .app-header h1 {
+    font-size: 17px;
+    margin: 0;
+  }
+  .app-header .sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin: 0;
+  }
+
+  .screen {
+    display: none;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+  .screen.visible { display: block; }
+
+  .screen h2 {
+    font-size: 15px;
+    margin: 0 0 4px;
+  }
+  .screen-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin: 0 0 16px;
+  }
+
+  /* ---------- screen-start ---------- */
+  #chat-input {
+    width: 100%;
+    min-height: 70px;
+    resize: vertical;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    margin-bottom: 10px;
+  }
+  .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .chip {
+    background: var(--chip-bg);
+    color: var(--primary-dark);
+    border: 1px solid #d6ddf5;
+    border-radius: 20px;
+    padding: 7px 12px;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+  .chip:hover { background: #dfe5fa; }
+
+  .btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .btn:hover { background: var(--primary-dark); }
+  .btn.secondary {
+    background: #fff;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+  }
+  .btn.secondary:hover { background: #eef1fb; }
+  .btn.ghost {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .btn.ghost:hover { background: #f2f3f5; }
+
+  /* ---------- screen-loading ---------- */
+  .loading-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 50px 10px;
+    gap: 14px;
+  }
+  .spinner {
+    width: 34px; height: 34px;
+    border: 3px solid #dbe1f5;
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-box .loading-text {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  /* ---------- Chat bubbles chung ---------- */
+  .chat-thread {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .bubble {
+    border-radius: 10px;
+    padding: 10px 13px;
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 92%;
+  }
+  .bubble.user {
+    background: var(--primary);
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 3px;
+  }
+  .bubble.ai {
+    background: #f1f2f6;
+    color: var(--text);
+    align-self: flex-start;
+    border-bottom-left-radius: 3px;
+  }
+  .bubble.ai.evidence { background: var(--green-bg); border: 1px solid #bfe8d3; }
+  .bubble.ai.no-evidence { background: var(--red-bg); border: 1px solid #f3c6c2; }
+  .bubble.ai.low-confidence { background: var(--amber-bg); border: 1px solid #eddca0; }
+
+  .citation-tag {
+    display: inline-block;
+    background: #d6f0e0;
+    color: var(--green);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin: 0 2px;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+  }
+  .status-pill.ok { background: var(--green-bg); color: var(--green); }
+  .status-pill.no { background: var(--red-bg); color: var(--red); }
+  .status-pill.ambiguous { background: var(--amber-bg); color: var(--amber); }
+
+  .feedback-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 6px;
+  }
+  .feedback-row button {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .feedback-row button:hover { background: #f2f3f5; }
+  .feedback-row button.picked { border-color: var(--primary); background: var(--chip-bg); }
+  .feedback-note {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-left: 4px;
+  }
+
+  .action-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+
+  .source-box {
+    border-top: 1px dashed var(--border);
+    margin-top: 12px;
+    padding-top: 10px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .source-box strong { color: var(--text); }
+
+  .clarify-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .clarify-options button {
+    text-align: left;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 13.5px;
+    cursor: pointer;
+  }
+  .clarify-options button:hover { border-color: var(--primary); background: var(--chip-bg); }
+
+  .mock-tag {
+    display: inline-block;
+    font-size: 10px;
+    color: #9ca3af;
+    border: 1px dashed #d1d5db;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+  }
+
+  .correction-input-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .correction-input-row input {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 13.5px;
+  }
+
+  @media (max-width: 480px) {
+    .app-wrap { margin: 10px auto; padding: 0 10px; }
+    .screen { padding: 14px; }
+    #demo-nav { gap: 6px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ THANH ĐIỀU HƯỚNG NHANH (BTC/TA) ============ -->
+<div id="demo-nav">
+  <span class="nav-label">TA/BTC nav:</span>
+  <button data-target="screen-start">1. Start</button>
+  <button data-target="screen-loading">2. Loading</button>
+  <button data-target="screen-happy-path">3. Có căn cứ</button>
+  <button data-target="screen-no-evidence">4. Không đủ căn cứ</button>
+  <button data-target="screen-low-confidence">5. Câu hỏi mơ hồ</button>
+  <button data-target="screen-correction">6. Chỉnh sửa</button>
+</div>
+
+<div class="app-wrap">
+  <div class="app-header">
+    <div class="logo">VL</div>
+    <div>
+      <h1>VLearn Tutor</h1>
+      <p class="sub">Hỏi đáp nội dung khóa học AI20K — CP2 mockup (dữ liệu giả)</p>
+    </div>
+  </div>
+
+  <!-- ============ 1. SCREEN START ============ -->
+  <div id="screen-start" class="screen visible">
+    <h2>Bắt đầu hỏi</h2>
+    <p class="screen-desc">Nhập câu hỏi về nội dung khóa học, hoặc bấm vào một gợi ý bên dưới.</p>
+
+    <textarea id="chat-input" placeholder="Ví dụ: Buổi 3 nói về khái niệm gì?"></textarea>
+
+    <div class="suggestions">
+      <button class="chip" data-fill="Buổi 3 nói về overfitting đúng không, cho mình ví dụ cụ thể?">
+        Buổi 3 nói về overfitting, cho ví dụ?
+      </button>
+      <button class="chip" data-fill="Khóa học có dạy về triển khai mô hình lên production không?">
+        Khóa học có dạy deploy production không?
+      </button>
+      <button class="chip" data-fill="Buổi 3 khó quá, mình chưa hiểu">
+        Buổi 3 khó quá, mình chưa hiểu
+      </button>
+    </div>
+
+    <button class="btn" id="btn-send">Gửi câu hỏi →</button>
+  </div>
+
+  <!-- ============ 2. SCREEN LOADING ============ -->
+  <div id="screen-loading" class="screen">
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <div class="loading-text">Đang tìm tài liệu liên quan và kiểm tra căn cứ...</div>
+    </div>
+  </div>
+
+  <!-- ============ 3. SCREEN HAPPY PATH (đủ căn cứ) ============ -->
+  <div id="screen-happy-path" class="screen">
+    <span class="status-pill ok">✓ Đủ căn cứ từ tài liệu khóa học</span>
+    <span class="mock-tag">MOCK DATA — chưa gọi AI thật</span>
+
+    <div class="chat-thread">
+      <div class="bubble user" id="hp-user-question">Buổi 3 nói về overfitting đúng không, cho mình ví dụ cụ thể?</div>
+      <div class="bubble ai evidence" id="hp-answer">
+        Đúng vậy. Theo transcript buổi 3, đoạn <span class="citation-tag">T3-12</span>,
+        overfitting là hiện tượng mô hình học quá khớp với dữ liệu huấn luyện, dẫn đến
+        giảm khả năng tổng quát hóa trên dữ liệu mới. Giảng viên có nêu ví dụ: một mô hình
+        phân loại ảnh mèo/chó đạt 99% accuracy trên tập train nhưng chỉ 65% trên tập test,
+        vì mô hình "học thuộc lòng" các đặc điểm nhiễu của từng ảnh cụ thể thay vì học đặc
+        trưng tổng quát <span class="citation-tag">T3-14</span>. Slide buổi 3 cũng đề cập
+        2 cách khắc phục: regularization và tăng dữ liệu huấn luyện
+        <span class="citation-tag">Slide-B3-tr.8</span>.
+      </div>
+    </div>
+
+    <div class="source-box">
+      <strong>Nguồn trích dẫn:</strong> Transcript buổi 3 (đoạn T3-12, T3-14) · Slide buổi 3, trang 8
+    </div>
+
+    <div class="feedback-row">
+      <span style="font-size:13px; color:var(--text-dim);">Câu trả lời này hữu ích không?</span>
+      <button id="fb-up" onclick="mockFeedback('up')">👍</button>
+      <button id="fb-down" onclick="mockFeedback('down')">👎</button>
+      <span class="feedback-note" id="fb-note"></span>
+    </div>
+
+    <div class="action-row">
+      <button class="btn secondary" onclick="goTo('screen-correction')">Câu trả lời chưa đúng ý mình</button>
+      <button class="btn ghost" onclick="goTo('screen-start')">Hỏi câu khác</button>
+    </div>
+  </div>
+
+  <!-- ============ 4. SCREEN NO EVIDENCE (không đủ căn cứ) ============ -->
+  <div id="screen-no-evidence" class="screen">
+    <span class="status-pill no">✕ Chưa tìm thấy căn cứ trong tài liệu</span>
+    <span class="mock-tag">MOCK DATA — chưa gọi AI thật</span>
+
+    <div class="chat-thread">
+      <div class="bubble user">Khóa học có dạy về triển khai mô hình lên production không?</div>
+      <div class="bubble ai no-evidence">
+        Mình đã kiểm tra nhưng chưa tìm thấy nội dung này trong các tài liệu và transcript
+        của các buổi học đã có trong hệ thống. Mình không muốn đoán để tránh đưa thông tin
+        sai cho bạn.
+        <br><br>
+        Bạn có thể:
+        <br>• Hỏi TA trên kênh Discord #hoi-dap-ai20k để được xác nhận
+        <br>• Xem lại đề cương khóa học xem chủ đề này có nằm ở buổi sau không
+        <br>• Nếu bạn nhớ chủ đề này được nhắc ở buổi nào, hãy nói rõ số buổi để mình tìm lại
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn secondary" onclick="goTo('screen-start')">Hỏi lại câu khác</button>
+      <button class="btn ghost" disabled title="Mock: mở link Discord thật ở CP3">Mở Discord TA (mock)</button>
+    </div>
+  </div>
+
+  <!-- ============ 5. SCREEN LOW CONFIDENCE (câu hỏi mơ hồ) ============ -->
+  <div id="screen-low-confidence" class="screen">
+    <span class="status-pill ambiguous">? Câu hỏi chưa đủ rõ để trả lời chính xác</span>
+    <span class="mock-tag">MOCK DATA — chưa gọi AI thật</span>
+
+    <div class="chat-thread">
+      <div class="bubble user">Buổi 3 khó quá, mình chưa hiểu</div>
+      <div class="bubble ai low-confidence">
+        Mình muốn giúp đúng phần bạn đang thắc mắc. Buổi 3 có vài nội dung chính —
+        bạn đang gặp khó ở phần nào?
+      </div>
+    </div>
+
+    <div class="clarify-options">
+      <button onclick="goToHappyFromClarify('Mình chưa hiểu khái niệm overfitting là gì')">
+        Khái niệm overfitting là gì
+      </button>
+      <button onclick="goToHappyFromClarify('Mình chưa hiểu ví dụ overfitting trong bài tập buổi 3')">
+        Ví dụ áp dụng overfitting trong bài tập
+      </button>
+      <button onclick="goTo('screen-no-evidence')">
+        Phần khác không có trong 2 lựa chọn trên
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ 6. SCREEN CORRECTION (chỉnh sửa / hỏi lại) ============ -->
+  <div id="screen-correction" class="screen">
+    <span class="status-pill ambiguous">↺ Học viên phản hồi chưa đúng ý</span>
+    <span class="mock-tag">MOCK DATA — chưa gọi AI thật</span>
+
+    <div class="chat-thread" id="correction-thread">
+      <div class="bubble user">Buổi 3 nói về overfitting đúng không, cho mình ví dụ cụ thể?</div>
+      <div class="bubble ai evidence">
+        Theo transcript buổi 3, đoạn <span class="citation-tag">T3-12</span>, overfitting là
+        hiện tượng mô hình học quá khớp với dữ liệu huấn luyện...
+      </div>
+      <div class="bubble user">Câu trả lời chưa đúng ý mình</div>
+      <div class="bubble ai low-confidence">
+        Xin lỗi bạn, để mình trả lời sát hơn — bạn đang muốn hỏi về <strong>định nghĩa</strong>
+        overfitting, hay muốn hỏi <strong>cách khắc phục</strong> overfitting?
+      </div>
+    </div>
+
+    <div class="correction-input-row">
+      <input id="correction-input" type="text" placeholder="Nhập làm rõ, ví dụ: mình muốn hỏi cách khắc phục" />
+      <button class="btn" onclick="submitCorrection()">Gửi</button>
+    </div>
+
+    <div class="action-row">
+      <button class="btn ghost" onclick="goTo('screen-start')">Bắt đầu câu hỏi mới</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // MOCK DATA - CP3 sẽ thay bằng AI call thật (RAG trên tài liệu khóa học thật)
+  // Ánh xạ câu hỏi mẫu -> màn hình đích, mô phỏng quyết định AI trung tâm.
+  const MOCK_ROUTES = [
+    { match: "overfitting", target: "screen-happy-path" },
+    { match: "production", target: "screen-no-evidence" },
+    { match: "khó quá", target: "screen-low-confidence" }
+  ];
+
+  // MOCK DATA - câu trả lời điều chỉnh sau khi học viên bấm "chưa đúng ý mình"
+  const MOCK_CORRECTION_REPLY = {
+    default:
+      "Cảm ơn bạn đã nói rõ hơn. Theo transcript buổi 3, đoạn [T3-16], cách khắc phục " +
+      "overfitting gồm: (1) dùng regularization như L2, (2) tăng lượng dữ liệu huấn luyện, " +
+      "(3) dùng kỹ thuật early stopping khi validation loss tăng trở lại.",
+  };
+
+  function goTo(id) {
+    document.querySelectorAll('.screen').forEach(function (el) {
+      el.classList.remove('visible');
+    });
+    document.getElementById(id).classList.add('visible');
+
+    document.querySelectorAll('#demo-nav button').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-target') === id);
+    });
+
+    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  }
+
+  // ---- screen-start: gợi ý câu hỏi tự điền ----
+  document.querySelectorAll('.chip').forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      document.getElementById('chat-input').value = chip.getAttribute('data-fill');
+    });
+  });
+
+  // ---- screen-start -> screen-loading -> rẽ nhánh ----
+  document.getElementById('btn-send').addEventListener('click', function () {
+    const question = document.getElementById('chat-input').value.trim();
+    goTo('screen-loading');
+
+    // Giả lập AI xử lý ~1 giây rồi rẽ nhánh theo nội dung câu hỏi (MOCK DATA)
+    setTimeout(function () {
+      let target = "screen-low-confidence"; // fallback mặc định nếu không khớp gì
+      for (const route of MOCK_ROUTES) {
+        if (question.toLowerCase().includes(route.match)) {
+          target = route.target;
+          break;
+        }
+      }
+      if (target === "screen-happy-path") {
+        document.getElementById('hp-user-question').textContent =
+          question || "Buổi 3 nói về overfitting đúng không, cho mình ví dụ cụ thể?";
+      }
+      goTo(target);
+    }, 1000);
+  });
+
+  // ---- screen-low-confidence: chọn lựa chọn làm rõ -> đi tới happy path ----
+  function goToHappyFromClarify(clarifiedQuestion) {
+    document.getElementById('hp-user-question').textContent = clarifiedQuestion;
+    goTo('screen-happy-path');
+  }
+
+  // ---- screen-happy-path: phản hồi 👍/👎ối (mock, chỉ đổi UI) ----
+  function mockFeedback(type) {
+    document.getElementById('fb-up').classList.toggle('picked', type === 'up');
+    document.getElementById('fb-down').classList.toggle('picked', type === 'down');
+    document.getElementById('fb-note').textContent =
+      type === 'up' ? 'Đã ghi nhận, cảm ơn bạn!' : 'Đã ghi nhận, mình sẽ cải thiện.';
+  }
+
+  // ---- screen-correction: gửi làm rõ -> AI trả lời điều chỉnh ngay trong thread ----
+  function submitCorrection() {
+    const input = document.getElementById('correction-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    const thread = document.getElementById('correction-thread');
+
+    const userBubble = document.createElement('div');
+    userBubble.className = 'bubble user';
+    userBubble.textContent = text;
+    thread.appendChild(userBubble);
+
+    const aiBubble = document.createElement('div');
+    aiBubble.className = 'bubble ai evidence';
+    aiBubble.innerHTML = MOCK_CORRECTION_REPLY.default.replace(
+      '[T3-16]', '<span class="citation-tag">T3-16</span>'
+    );
+    thread.appendChild(aiBubble);
+
+    input.value = '';
+    thread.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  // ---- Thanh điều hướng demo/TA ----
+  document.querySelectorAll('#demo-nav button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      goTo(btn.getAttribute('data-target'));
+    });
+  });
+
+  // Khởi tạo trạng thái active ban đầu cho nav
+  goTo('screen-start');
+</script>
+
+</body>
+</html>

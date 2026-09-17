@@ -1,0 +1,22 @@
+﻿respondent_id,"Trong 1 tháng qua, bạn đã bao nhiêu lần cần tìm một thông tin cụ thể trong tài liệu khóa học?","Khi có câu trả lời cho một câu hỏi về khóa học, bạn có gặp khó khăn trong việc xác định câu trả lời đó có được hỗ trợ bởi tài liệu khóa học hay không?","Khi phải kiểm tra lại thông tin, điều gì gây khó khăn hoặc tốn thời gian nhất?","Khi không chắc câu trả lời có căn cứ, bạn thường phải làm gì?","Mỗi lần kiểm tra lại một câu trả lời như vậy, bạn thường mất bao lâu?",Hãy kể lại một lần gần đây bạn không chắc thông tin mình tìm được có đúng với tài liệu khóa học hay không. Bạn đã làm gì và mất bao lâu?,"Nếu có cơ hội, bạn có sẵn sàng thử một prototype giúp kiểm tra câu trả lời dựa trên tài liệu khóa học không?"
+U01,3–5 lần,Thỉnh thoảng,Không biết câu trả lời nằm ở slide/video nào,Tìm lại slide/tài liệu;Xem lại video bài giảng,1–5 phút,không,Có
+U02,3–5 lần,Thường xuyên,Không biết câu trả lời nằm ở slide/video nào,Tìm lại slide/tài liệu;Hỏi giảng viên;Hỏi bạn bè;Hỏi một công cụ AI khác,10–20 phút,,Có
+U03,>10 lần,Rất thường xuyên,Tài liệu quá dài,Tìm lại slide/tài liệu;Xem lại video bài giảng;Hỏi giảng viên;Hỏi bạn bè;Tìm trên Internet;Hỏi một công cụ AI khác,>20 phút,Tôi học bài trên vlearn khi làm câu hỏi ôn tập tôi không biết ôn kiến thức ở đâu hay slide số mấy. Khi tra AI như ChatGPT thì không biết thông tin có đúng không. Tôi đã từng bị Gemini đưa ra thông tin sai về kiến thức cần học.,Có
+U04,3–5 lần,Thường xuyên,Tài liệu quá dài,Hỏi một công cụ AI khác,5–10 phút,,Có
+U05,>10 lần,Hiếm khi,"Quá nhiều tài liệu, chả biết thông tin cần tìm ở file nào cho đầy đủ thông tin để hiểu",Hỏi một công cụ AI khác,1–5 phút,Tra lại với công cụ AI khác và thời gian mất khoảng 1->5 phút,Không
+U06,3–5 lần,Thỉnh thoảng,Không biết tìm thông tin ở đâu,Tìm trên Internet;Hỏi một công cụ AI khác,5–10 phút,,Có
+U07,3–5 lần,Thỉnh thoảng,Không biết tìm thông tin ở đâu,Tìm lại slide/tài liệu;Xem lại video bài giảng;Hỏi giảng viên;Hỏi bạn bè,10–20 phút,,Có
+U08,1–2 lần,Hiếm khi,Phải kiểm tra nhiều nguồn,Tìm lại slide/tài liệu;Xem lại video bài giảng;Hỏi giảng viên;Hỏi bạn bè;Tìm trên Internet;Hỏi một công cụ AI khác;Không kiểm tra,1–5 phút,,Có
+U09,>10 lần,Không bao giờ,Tài liệu quá dài,Tìm lại slide/tài liệu;Hỏi giảng viên;Hỏi một công cụ AI khác,5–10 phút,,Không
+U10,3–5 lần,Thỉnh thoảng,Không biết câu trả lời nằm ở slide/video nào,Hỏi giảng viên;Hỏi bạn bè,5–10 phút,,Có
+U11,1–2 lần,Hiếm khi,Không biết câu trả lời nằm ở slide/video nào,Hỏi một công cụ AI khác,1–5 phút,,Có
+U12,1–2 lần,Hiếm khi,Lười,Hỏi giảng viên;Hỏi bạn bè,1–5 phút,,Có
+U13,3–5 lần,Thỉnh thoảng,Không biết câu trả lời nằm ở slide/video nào,Tìm lại slide/tài liệu;Xem lại video bài giảng;Hỏi bạn bè,1–5 phút,,Có
+U14,3–5 lần,Thỉnh thoảng,Không biết câu trả lời nằm ở slide/video nào,Tìm lại slide/tài liệu;Xem lại video bài giảng;Hỏi một công cụ AI khác,5–10 phút,,Có
+U15,0,Thỉnh thoảng,Tài liệu quá dài,Tìm lại slide/tài liệu;Hỏi giảng viên;Tìm trên Internet;Hỏi một công cụ AI khác,1–5 phút,,Có
+U16,6–10 lần,Thường xuyên,Tài liệu quá dài,Hỏi giảng viên;Hỏi bạn bè;Tìm trên Internet,10–20 phút,,Có
+U17,3–5 lần,Không bao giờ,Tài liệu quá dài,Tìm lại slide/tài liệu;Hỏi bạn bè;Tìm trên Internet;Hỏi một công cụ AI khác,5–10 phút,Bỏ cuộc ,Có
+U18,1–2 lần,Thỉnh thoảng,Phải kiểm tra nhiều nguồn,Hỏi giảng viên;Hỏi bạn bè;Hỏi một công cụ AI khác,1–5 phút,,Có
+U19,3–5 lần,Thường xuyên,Tài liệu quá dài,Tìm lại slide/tài liệu;Tìm trên Internet;Hỏi một công cụ AI khác,5–10 phút,,Không
+U20,3–5 lần,Thỉnh thoảng,Không biết câu trả lời nằm ở slide/video nào,Tìm lại slide/tài liệu;Xem lại video bài giảng;Tìm trên Internet;Hỏi một công cụ AI khác,5–10 phút,Thông tin về khóa học AI cũng như các kiến thức quan trọng đôi khi bị sai. Tôi phải tìm đến khóa học gốc tìm từng kiến thức để verify ,Có
+U21,3–5 lần,Thỉnh thoảng,Không biết câu trả lời nằm ở slide/video nào,Xem lại video bài giảng,5–10 phút,,Có

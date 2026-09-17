@@ -24,56 +24,68 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
   Điều này làm tăng thời gian tìm kiếm, kiểm chứng và có nguy cơ khiến học viên
   tiếp nhận thông tin sai.
 
-- Evidence:
+* Evidence:
 
-  - Số liệu khảo sát nội bộ khóa học, n = 10:
-    - 80% (8/10) đã sử dụng AI ngoài như ChatGPT/Gemini để hỗ trợ job này.
-    - 30% (3/10) cho biết đã gặp vấn đề hơn 10 lần.
-    - 30% (3/10) gặp vấn đề ở mức thường xuyên hoặc rất thường xuyên.
-    - 80% (8/10) là willing users, trả lời "Có" khi được hỏi có muốn sử dụng giải pháp.
-    - Hai lý do gốc được lặp lại nhiều nhất:
-      - "Không biết câu trả lời nằm ở slide/video nào": 3/10.
-      - "Tài liệu quá dài": 3/10.
+  * Khảo sát nội bộ học viên ngoài nhóm trong khóa, **n = 21**, thực hiện trong ngày **16–17/9/2026**.
 
-  - Quote/ví dụ nguyên văn từ người khảo sát:
+  * **71.4% (15/21)** cho biết gặp khó khăn từ mức "thỉnh thoảng" trở lên khi xác định câu trả lời có căn cứ trong tài liệu hay không; trong đó **28.6% (6/21)** gặp ở mức thường xuyên hoặc rất thường xuyên.
 
-    1. U1: "Tôi học bài trên vlearn khi làm câu hỏi ôn tập tôi không biết ôn kiến thức ở đâu hay slide số mấy. Khi tra AI như ChatGPT thì không biết thông tin có đúng không. Tôi đã từng bị Gemini đưa ra thông tin sai về kiến thức cần học."
+  * **66.7% (14/21)** đã sử dụng AI ngoài như ChatGPT/Gemini như một workaround khi gặp vấn đề, nhưng các công cụ này không có đầy đủ ngữ cảnh của khóa học.
 
-    2. U2: "Mỗi lần ra lại với công cụ AI khác và thời gian mất khoảng 1->5 phút."
+  * **76.2% (16/21)** cần tìm lại thông tin cụ thể trong tài liệu ít nhất 3 lần/tháng; **14.3% (3/21)** thực hiện việc này hơn 10 lần/tháng.
 
-    3. U3: "Có lúc giảng viên lại đưa tài liệu dài cả trăm trang, khiến việc tìm đúng thông tin tôi cần cực kì khó khăn."
+  * **61.9% (13/21)** mất ít nhất 5 phút cho mỗi lần tìm hoặc kiểm tra lại thông tin; **19.0% (4/21)** mất ít nhất 10 phút.
 
-    4. U4: "Nhiều lần giảng viên trình chiếu 1 trang nào đó, nhưng trong slide mình xem lại không có trang đó. Mình phải mất thời gian vào từng link slide khác chỉ để tìm đúng cái để xem."
+  * Hai nguyên nhân được lựa chọn nhiều nhất:
 
-    5. U5: "Khi làm Lab ở nhà, đến lúc cần tài liệu thì không nhớ cái mình cần nằm ở đâu? Trong slide hay video, mất công phải vào từng cái kiểm tra."
-    Khảo sát nội bộ khóa học, n=10, thực hiện ngày 17/9/2026.
+    * **Không biết câu trả lời nằm ở slide/video nào: 38.1% (8/21).**
+    * **Tài liệu quá dài: 33.3% (7/21).**
+
+  * **85.7% (18/21)** cho biết sẵn sàng thử prototype.
+
+  * Quote/ví dụ nguyên văn từ người khảo sát:
+
+        1. U1: "Quá nhiều tài liệu, chả biết thông tin cần tìm ở file nào cho đầy đủ thông tin để hiểu"
+
+        2. U2: "Tra lại với công cụ AI khác và thời gian mất khoảng 1->5 phút"
+
+        3. U3: "Bỏ cuộc"
+
+        4. U4: "Thông tin về khóa học AI cũng như các kiến thức quan trọng đôi khi bị sai. Tôi phải tìm đến khóa học gốc tìm từng kiến thức để verify"
+
+        5. U5: "Phải kiểm tra nhiều nguồn"
+
+  * Full survey response log được nhóm lưu lại để có thể kiểm tra lại số đếm và các quote khi cần.
+
+- Full survey response log: `evidence/survey_log.csv`
 
 ## §2. Impact & quyết định chọn
 
-| Ứng viên vấn đề | Evidence | Tần suất / mức độ | Tốn gì mỗi lần | Khả thi |
-|---|---|---|---|---|
-| Khó xác định thông tin nằm ở slide/video nào | 3/10 nêu trực tiếp là lý do gốc | 30% người khảo sát nêu vấn đề này | Mất thời gian dò lại nhiều tài liệu | Cao |
-| Tài liệu quá dài, khó tìm đúng đoạn cần dùng | 3/10 nêu trực tiếp là lý do gốc | 30% người khảo sát nêu vấn đề này | Tốn thời gian đọc/tìm kiếm | Cao |
-| Khó biết câu trả lời từ AI ngoài có đúng và có căn cứ hay không | 8/10 đã dùng AI ngoài; qualitative evidence ghi nhận lo ngại AI trả lời sai/khó kiểm chứng | 30% gặp vấn đề thường xuyên/rất thường xuyên; 30% đã gặp >10 lần | Phải kiểm chứng lại, có nguy cơ học sai | Cao |
+| Ứng viên vấn đề                                                 | Evidence                                                                              | Tần suất / mức độ                                    | Tốn gì mỗi lần                                                     | Khả thi |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------ | ------- |
+| Khó xác định thông tin nằm ở slide/video nào                    | 38.1% (8/21) chọn đây là một nguyên nhân chính                                        | 76.2% cần tìm lại thông tin cụ thể ≥3 lần/tháng      | Tốn thời gian dò nhiều slide/video/tài liệu                        | Cao     |
+| Tài liệu quá dài, khó tìm đúng đoạn cần dùng                    | 33.3% (7/21) chọn đây là một nguyên nhân chính                                        | Xuất hiện như một trong hai root cause phổ biến nhất | Tốn thời gian đọc và tìm kiếm lại                                  | Cao     |
+| Khó biết câu trả lời từ AI ngoài có đúng và có căn cứ hay không | 71.4% gặp khó khăn từ mức thỉnh thoảng trở lên; 66.7% đã dùng AI ngoài làm workaround | 28.6% gặp vấn đề thường xuyên/rất thường xuyên       | 61.9% mất ≥5 phút/lần để tìm hoặc kiểm tra lại; 19.0% mất ≥10 phút | Cao     |
 
-- Ứng viên ĐÃ LOẠI + vì sao:
+* Ứng viên ĐÃ LOẠI + vì sao:
 
   Không chọn xây hệ thống quản lý/tìm kiếm toàn bộ tài liệu VLearn vì scope quá lớn
   cho thời gian hackathon và không cần thiết để kiểm chứng giả thuyết cốt lõi.
 
-- Ứng viên CHỌN + vì sao:
+* Ứng viên CHỌN + vì sao:
 
-  Chọn vấn đề "khó kiểm chứng câu trả lời và tìm lại căn cứ trong tài liệu học".
+  Chọn vấn đề **"khó kiểm chứng câu trả lời và tìm lại căn cứ trong tài liệu học"**.
 
   Lý do:
-  - 80% (8/10) người khảo sát đã sử dụng AI ngoài để hỗ trợ job này.
-  - 30% (3/10) đã gặp vấn đề hơn 10 lần.
-  - 30% (3/10) gặp vấn đề thường xuyên hoặc rất thường xuyên.
-  - 80% (8/10) sẵn sàng sử dụng giải pháp.
-  - Hai nguyên nhân lặp lại nhiều nhất đều liên quan trực tiếp đến việc tìm lại evidence:
-    không biết thông tin nằm ở slide/video nào và tài liệu quá dài.
-  - Qualitative evidence cho thấy người học còn lo ngại AI ngoài trả lời sai
-    hoặc khó kiểm chứng nguồn.
+
+  * **71.4% (15/21)** gặp khó khăn từ mức thỉnh thoảng trở lên khi xác định câu trả lời có căn cứ trong tài liệu.
+  * **28.6% (6/21)** gặp khó khăn ở mức thường xuyên hoặc rất thường xuyên.
+  * **66.7% (14/21)** đã phải dùng AI ngoài như ChatGPT/Gemini làm workaround.
+  * **61.9% (13/21)** mất ít nhất 5 phút mỗi lần tìm hoặc kiểm tra lại thông tin.
+  * Hai root cause phổ biến nhất là **không biết thông tin nằm ở slide/video nào (38.1%)** và **tài liệu quá dài (33.3%)**.
+  * **85.7% (18/21)** sẵn sàng thử prototype.
+  * Qualitative evidence cũng cho thấy người học phải kiểm tra nhiều nguồn, quay lại tài liệu gốc để verify hoặc thậm chí bỏ cuộc khi việc tìm kiếm quá khó.
+
 
 ## §3. Giải pháp tương tự đã nghiên cứu
 
@@ -133,28 +145,33 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
   Cost-of-error của việc trả lời sai trong bối cảnh học tập cao hơn chi phí
   của việc nói "chưa đủ thông tin".
 
-- §4b. Nguyên tắc đã áp dụng:
+* §4b. Nguyên tắc HAX/PAIR đã áp dụng:
 
-| Nguyên tắc | Áp cụ thể vào đâu trong prototype |
-|---|---|
-| Make clear what the system can do | UI nói rõ chỉ trả lời dựa trên tài liệu khóa học |
-| Make clear how well the system can do | Khi evidence truy xuất chưa đủ mạnh, hệ thống báo chưa đủ căn cứ hoặc yêu cầu làm rõ thay vì trả lời chắc chắn |
-| Support efficient correction | Người dùng có thể sửa / bổ sung câu hỏi |
-| Support graceful failure | Không có nguồn thì không bịa câu trả lời |
-| Show relevant context | Hiển thị citation / đoạn nguồn bên cạnh câu trả lời |
+| Nguyên tắc                               | Áp cụ thể vào đâu trong prototype                                                                                                                                  |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **G1 — Làm rõ hệ thống làm được gì**     | UI nói rõ Grounded VLearn Answer chỉ trả lời dựa trên tài liệu khóa học được cung cấp, không phải trợ lý kiến thức tổng quát.                                      |
+| **G2 — Làm rõ hệ thống làm tốt đến đâu** | Câu trả lời hiển thị citation/evidence để người dùng biết căn cứ đến từ đâu; khi evidence chưa đủ, hệ thống không thể hiện câu trả lời như một kết luận chắc chắn. |
+| **G9 — Sửa dễ dàng**                     | Người dùng có thể sửa, bổ sung hoặc diễn đạt lại câu hỏi khi kết quả chưa đúng ý; hệ thống dùng input đã sửa để chạy lại retrieval và tạo câu trả lời mới.         |
+| **G10 — Thu hẹp phạm vi khi nghi ngờ**   | Khi câu hỏi mơ hồ hoặc evidence yếu, hệ thống không đoán; thay vào đó dùng `ask_clarify` để yêu cầu người dùng bổ sung thông tin hoặc báo chưa đủ căn cứ.          |
+| **G11 — Giải thích vì sao**              | Khi trả lời, hệ thống hiển thị citation/đoạn evidence liên quan để người dùng có thể kiểm tra vì sao câu trả lời được đưa ra.                                      |
 
-## §5. Kiểu lỗi — các lớp chỗ khó + kịch bản
+* **PAIR — Explainability + Trust / Errors + Graceful Failure:**
+  Citation giúp người dùng tự kiểm chứng thay vì yêu cầu họ tin AI một cách tuyệt đối. Khi hệ thống không tìm thấy đủ evidence, hệ thống chuyển sang trạng thái không đủ căn cứ hoặc hỏi làm rõ thay vì tạo câu trả lời không được hỗ trợ.
 
-| # | Lớp chỗ khó | Kịch bản | Rủi ro | Hành vi mong muốn |
-|---|---|---|---|---|
-| 1 | Input | Câu hỏi rõ, có trong tài liệu | Thấp | Trả lời + citation |
-| 2 | Input | Câu hỏi quá ngắn/mơ hồ | Trả lời sai ý | Hỏi lại để làm rõ |
-| 3 | Retrieval | Có tài liệu nhưng lấy sai đoạn | Citation không hỗ trợ câu trả lời | Không coi case là pass; chỉ trả lời khi citation chứa evidence hỗ trợ trực tiếp |
-| 4 | Retrieval | Không tìm thấy tài liệu liên quan | Hallucination | Báo không đủ căn cứ |
-| 5 | Generation | Context đúng nhưng câu trả lời thêm thông tin ngoài context | Hallucination | Chỉ dùng thông tin từ context |
-| 6 | Scope | Người dùng hỏi ngoài phạm vi khóa học | Trả lời ngoài domain | Từ chối nhẹ + nêu phạm vi |
-| 7 | Evidence sufficiency | Có context nhưng rất yếu/mâu thuẫn | Trả lời quá tự tin | Báo chưa đủ căn cứ hoặc yêu cầu làm rõ |
-| 8 | Correction | Người dùng nói câu trả lời chưa đúng ý | Hệ thống lặp lại lỗi | Nhận correction và xử lý lại |
+
+## §5. Kiểu lỗi — 4 lớp chỗ khó + kịch bản
+
+| # | Lớp chỗ khó                  | Kịch bản                                                                                 | Rủi ro                                                                            | Hành vi mong muốn                                                               |
+| - | ---------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| 1 | ① Nguồn sự thật              | Có tài liệu liên quan nhưng retrieval lấy sai đoạn                                       | Citation không thực sự hỗ trợ câu trả lời                                         | Không coi case là pass; chỉ trả lời khi citation chứa evidence hỗ trợ trực tiếp |
+| 2 | ① Nguồn sự thật              | Không tìm thấy tài liệu liên quan                                                        | Hallucination hoặc trả lời không có căn cứ                                        | Báo không đủ căn cứ và không tự suy đoán                                        |
+| 3 | ② Mơ hồ / thiếu thông tin    | Câu hỏi của người dùng quá ngắn hoặc có nhiều cách hiểu                                  | Hệ thống trả lời sai ý người dùng                                                 | Yêu cầu người dùng làm rõ trước khi trả lời                                     |
+| 4 | ② Mơ hồ / thiếu thông tin    | Có context nhưng evidence yếu hoặc mâu thuẫn                                             | Hệ thống trả lời quá tự tin từ evidence chưa đủ                                   | Báo chưa đủ căn cứ hoặc hỏi lại để làm rõ                                       |
+| 5 | ③ Ngoài phạm vi / thẩm quyền | Người dùng hỏi kiến thức ngoài phạm vi tài liệu khóa học                                 | Hệ thống trả lời ngoài domain đã cam kết                                          | Từ chối nhẹ và nói rõ phạm vi hệ thống                                          |
+| 6 | ③ Ngoài phạm vi / thẩm quyền | Người dùng yêu cầu hệ thống suy luận hoặc bổ sung kiến thức không có trong tài liệu      | Câu trả lời có thể đúng theo kiến thức chung nhưng không còn grounded trên VLearn | Không bổ sung thông tin ngoài nguồn; nói rõ chưa có căn cứ trong tài liệu       |
+| 7 | ④ Đặc thù domain             | Context đúng nhưng câu trả lời thêm thông tin không được source hỗ trợ                   | Học viên có thể học sai kiến thức                                                 | Chỉ sử dụng thông tin được evidence hỗ trợ                                      |
+| 8 | ④ Đặc thù domain             | Citation được hiển thị nhưng đoạn nguồn không thực sự chứng minh claim trong câu trả lời | Người học tưởng câu trả lời đã được kiểm chứng trong khi citation sai             | Citation phải hỗ trợ trực tiếp claim tương ứng; nếu không thì case fail         |
+
 
 ## §6. Bốn đường đi của trải nghiệm
 
@@ -235,15 +252,25 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
 - Trần Anh Vũ — Prototype Engineer:
   user flow, prototype, prompt/AI integration, code, demo.
 
-- Willing users cho validation:
-  Trong khảo sát có 8/10 willing users.
-  Nhóm đã xác nhận trước 2 người tham gia validation:
-  1. V1 — Học viên AI20K lớp 3A
-  2. V2 — Học viên AI20K lớp 3A
+* Willing users cho validation:
 
-- Kế hoạch validation:
+  Trong khảo sát có **18/21 người (85.7%)** cho biết sẵn sàng thử prototype.
+
+  Nhóm sẽ chọn ít nhất 5 người ngoài nhóm từ pool willing users này để thực hiện validation tại CP5.
+
+* Kế hoạch validation:
+
   CP5 cho ít nhất 5 người ngoài nhóm thực hiện cùng một task.
-  Ghi lại họ làm gì, kẹt ở đâu, quote nguyên văn và quyết định sửa gì.
+  
+
+  Ghi lại:
+
+  * người dùng đã làm gì;
+  * họ bị kẹt ở đâu;
+  * quote nguyên văn;
+  * task pass/fail;
+  * nhóm quyết định sửa gì sau observation.
+
 
 - Multi-prototype:
   Không làm nếu không đủ thời gian.
@@ -259,5 +286,4 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
 | 17/9 | Điều chỉnh prompt/decision logic cho ambiguous và weak-context | 6 case fail của v1 tập trung ở hai nhóm này; hệ thống trả lời/refuse thay vì `ask_clarify` |
 | 17/9 | Chạy lại evaluation v2 | Xác minh thay đổi; v2 đạt 20/20 = 100% trên golden set hiện tại |
 | 17/9 | Chốt quality bar ≥80% + zero unsupported answer cho no-evidence cases | Khóa tiêu chuẩn đánh giá cho CP4 |
-| 17/9 | Bổ sung survey n=10 và 5 quotes người dùng | Ground problem selection bằng evidence thật trước khi freeze CP4 |
-| 17/9 | Chốt problem "khó kiểm chứng câu trả lời và tìm lại căn cứ" | 8/10 đã dùng AI ngoài, 8/10 willing; pain lặp lại về tìm nguồn và tài liệu dài |
+| 17/9 | Hoàn thiện evidence survey n=21 + ≥5 quotes nguyên văn | 15/21 gặp pain từ mức thỉnh thoảng trở lên; 14/21 dùng AI ngoài; 18/21 willing users |

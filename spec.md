@@ -28,7 +28,7 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
 
   * Khảo sát nội bộ học viên ngoài nhóm trong khóa, **n = 21**, thực hiện trong ngày **16–17/9/2026**.
 
-  * **71.4% (15/21)** cho biết gặp khó khăn từ mức "thỉnh thoảng" trở lên khi xác định câu trả lời có căn cứ trong tài liệu hay không; trong đó **28.6% (6/21)** gặp ở mức thường xuyên hoặc rất thường xuyên.
+  * **71.4% (15/21)** cho biết gặp khó khăn từ mức "thỉnh thoảng" trở lên khi xác định câu trả lời có căn cứ trong tài liệu hay không; trong đó **23.8% (5/21)** gặp ở mức thường xuyên hoặc rất thường xuyên.
 
   * **66.7% (14/21)** đã sử dụng AI ngoài như ChatGPT/Gemini như một workaround khi gặp vấn đề, nhưng các công cụ này không có đầy đủ ngữ cảnh của khóa học.
 
@@ -79,7 +79,7 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
   Lý do:
 
   * **71.4% (15/21)** gặp khó khăn từ mức thỉnh thoảng trở lên khi xác định câu trả lời có căn cứ trong tài liệu.
-  * **28.6% (6/21)** gặp khó khăn ở mức thường xuyên hoặc rất thường xuyên.
+  * **23.8% (5/21)** gặp khó khăn ở mức thường xuyên hoặc rất thường xuyên.
   * **66.7% (14/21)** đã phải dùng AI ngoài như ChatGPT/Gemini làm workaround.
   * **61.9% (13/21)** mất ít nhất 5 phút mỗi lần tìm hoặc kiểm tra lại thông tin.
   * Hai root cause phổ biến nhất là **không biết thông tin nằm ở slide/video nào (38.1%)** và **tài liệu quá dài (33.3%)**.
@@ -287,3 +287,52 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
 | 17/9 | Chạy lại evaluation v2 | Xác minh thay đổi; v2 đạt 20/20 = 100% trên golden set hiện tại |
 | 17/9 | Chốt quality bar ≥80% + zero unsupported answer cho no-evidence cases | Khóa tiêu chuẩn đánh giá cho CP4 |
 | 17/9 | Hoàn thiện evidence survey n=21 + ≥5 quotes nguyên văn | 15/21 gặp pain từ mức thỉnh thoảng trở lên; 14/21 dùng AI ngoài; 18/21 willing users |
+
+## §10. Trạng thái tại thời điểm chốt CP4
+
+### 10.1. Chuẩn đạt được chốt
+
+Hệ thống đạt yêu cầu khi:
+- Ít nhất 80% cases trong golden set pass.
+- 100% cases không có đủ căn cứ không được bịa hoặc đưa ra
+  câu trả lời khẳng định không được evidence hỗ trợ.
+
+Một case pass phải đáp ứng hành vi kỳ vọng và các chiều chất lượng
+áp dụng cho case đó tại §7. Với case trả lời, nội dung phải đúng
+trọng tâm, được nguồn hỗ trợ và có citation phù hợp.
+
+Nhóm giữ nguyên chuẩn đạt này sau hạn chốt CP4
+(21:00 ngày 17/9/2026). Các thay đổi tiếp theo về sản phẩm,
+kết quả kiểm thử và validation sẽ được ghi trong §9 Changelog.
+
+### 10.2. Phần đã hoàn thành
+
+- Xác định người dùng, vấn đề, phạm vi giải pháp và non-goals.
+- Có mock và sơ đồ luồng cho các tình huống trả lời, hỏi làm rõ,
+  thiếu căn cứ và sửa câu hỏi.
+- Đã triển khai code retrieval và tích hợp lời gọi Gemini API.
+- Có golden set 20 cases và bảng kết quả v1, v2.
+- Có log khảo sát 21 người tại evidence/survey_log.csv.
+
+### 10.3. Phần chưa hoàn thành và giới hạn hiện tại
+
+- Chưa hoàn thành validation với 5 người ngoài nhóm;
+  dự kiến thực hiện và ghi nhật ký tại CP5.
+- Citation hiện mới hiển thị mã đoạn nguồn, chưa có chức năng
+  bấm mở và xem trực tiếp đoạn tài liệu tương ứng.
+- Nút feedback 👍/👎 mới phản hồi trên giao diện, chưa lưu
+  thành dữ liệu để phân tích.
+- Nút mở Discord TA còn là mock, chưa tích hợp thật.
+- Bảng evaluation chưa lưu riêng citation thực tế do AI trả về
+  và các đoạn context được retrieval cho từng case.
+  Vì vậy, khả năng kiểm chứng độc lập kết quả còn hạn chế.
+
+### 10.4. Kế hoạch tiếp theo
+
+- Bổ sung bằng chứng đầu ra và citation cho evaluation;
+  nếu cần chấm lại thì giữ nguyên chuẩn đạt đã chốt.
+- Thực hiện validation với 5 người ngoài nhóm, trong đó có
+  ít nhất 2 người đã khai ở CP1; ghi nhận task, điểm vướng,
+  quote nguyên văn và quyết định của nhóm.
+- Ghi thay đổi từ feedback vào §9 Changelog.
+- Hoàn thiện slide PDF và video demo dự phòng để nộp CP5.

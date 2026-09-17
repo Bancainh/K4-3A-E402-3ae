@@ -79,7 +79,7 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
   Lý do:
 
   * **71.4% (15/21)** gặp khó khăn từ mức thỉnh thoảng trở lên khi xác định câu trả lời có căn cứ trong tài liệu.
-  * **28.6% (6/21)** gặp khó khăn ở mức thường xuyên hoặc rất thường xuyên.
+  * **23.8% (5/21)** gặp khó khăn ở mức thường xuyên hoặc rất thường xuyên.
   * **66.7% (14/21)** đã phải dùng AI ngoài như ChatGPT/Gemini làm workaround.
   * **61.9% (13/21)** mất ít nhất 5 phút mỗi lần tìm hoặc kiểm tra lại thông tin.
   * Hai root cause phổ biến nhất là **không biết thông tin nằm ở slide/video nào (38.1%)** và **tài liệu quá dài (33.3%)**.

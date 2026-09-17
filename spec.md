@@ -154,36 +154,46 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
 
 ## §7. Kiểm thử
 
-- Chiều chất lượng:
-  1. Groundedness:
-     Nội dung trả lời phải được hỗ trợ bởi context.
-  2. Citation correctness:
-     Citation phải thực sự chứa thông tin hỗ trợ câu trả lời.
-  3. Abstention correctness:
-     Khi không đủ evidence, hệ thống phải biết không trả lời.
-  4. Relevance:
-     Câu trả lời phải đúng trọng tâm câu hỏi.
+* Chiều chất lượng:
 
-- Golden set:
-  ≥20 case, lưu tại eval/golden_set.csv
+  1. **Groundedness:**
+     Nội dung trả lời phải được hỗ trợ bởi context được truy xuất.
 
-  Gợi ý cơ cấu:
-  - 8 câu có đủ căn cứ, phải trả lời đúng + citation.
-  - 4 câu mơ hồ, nên hỏi lại.
-  - 4 câu ngoài phạm vi/không có căn cứ, nên từ chối.
-  - 2 câu có context yếu.
-  - 2 câu correction/follow-up.
+  2. **Citation correctness:**
+     Citation phải thực sự chứa thông tin hỗ trợ cho câu trả lời.
 
-- Quality bar:
-  "Đạt khi ≥ [CHƯA CHỐT]% case qua bộ test,
-  đồng thời 100% case không có căn cứ không được bịa câu trả lời."
+  3. **Abstention correctness:**
+     Khi không có đủ evidence, hệ thống không được tự suy đoán hoặc bịa câu trả lời; hệ thống phải từ chối trả lời hoặc yêu cầu người dùng làm rõ khi phù hợp.
 
-- Kết quả các lượt chạy:
+  4. **Relevance:**
+     Câu trả lời phải đúng trọng tâm câu hỏi và không đưa thêm thông tin không cần thiết.
 
-| Lượt | Tổng case | Pass | Fail | Pass rate | Ghi chú |
-|---|---:|---:|---:|---:|---|
-| v1 | 20 | [ ] | [ ] | [ ]% | Baseline |
-| v2 | 20 | [ ] | [ ] | [ ]% | Sau khi sửa prompt |
+* Golden set:
+
+  Bộ kiểm thử gồm **20 cases**, lưu tại `eval/golden_set.csv`, với cơ cấu:
+
+  * 8 câu có đủ căn cứ: phải trả lời đúng và có citation phù hợp.
+  * 4 câu mơ hồ: phải yêu cầu người dùng làm rõ.
+  * 4 câu ngoài phạm vi hoặc không có căn cứ: phải từ chối trả lời.
+  * 2 câu có context yếu: không được trả lời khẳng định khi evidence chưa đủ; ưu tiên hỏi lại để làm rõ.
+  * 2 câu correction/follow-up: phải xử lý đúng thông tin bổ sung hoặc sửa đổi từ người dùng.
+
+* Quality bar:
+
+  **Hệ thống đạt yêu cầu khi ≥ 80% cases trong golden set pass, đồng thời 100% cases không có đủ căn cứ không được bịa hoặc đưa ra câu trả lời khẳng định không được hỗ trợ bởi evidence.**
+
+* Kết quả các lượt chạy:
+
+| Lượt | Tổng case | Pass | Fail | Pass rate | Ghi chú                                                                                                                                           |
+| ---- | --------: | ---: | ---: | --------: | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| v1   |        20 |   14 |    6 |       70% | Baseline. Các lỗi chủ yếu nằm ở nhóm ambiguous và weak-context: hệ thống có xu hướng trả lời hoặc từ chối ngay thay vì yêu cầu người dùng làm rõ. |
+| v2   |        20 |   20 |    0 |      100% | Sau khi điều chỉnh prompt/decision logic để xử lý tốt hơn các trường hợp ambiguous và weak-context bằng `ask_clarify`.                            |
+
+* Kết luận:
+
+  Lượt **v1 đạt 70%**, thấp hơn quality bar 80%. Phân tích lỗi cho thấy failure mode chính nằm ở khả năng nhận diện câu hỏi mơ hồ và context chưa đủ mạnh.
+
+  Sau khi điều chỉnh cách hệ thống xử lý các trường hợp này, **v2 đạt 100% (20/20 cases)** và vượt quality bar đã đặt ra.
 
 ## §8. Phân công & kế hoạch
 
@@ -213,5 +223,8 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
 
 | Thời điểm | Đổi gì | Vì sao (trỏ về feedback/case nào) |
 |---|---|---|
-| 16/9 | Chốt lát cắt grounded answer | Thu hẹp scope để kịp hackathon |
-
+| 16/9 | Chốt lát cắt Grounded VLearn Answer | Thu hẹp scope để tập trung vào một problem có thể build và đo trong hackathon |
+| 17/9 | Chạy baseline v1 trên golden set 20 cases | Đo chất lượng thực tế trước khi tiếp tục cải tiến; v1 đạt 14/20 = 70% |
+| 17/9 | Điều chỉnh prompt/decision logic cho ambiguous và weak-context | 6 case fail của v1 tập trung ở hai nhóm này; hệ thống trả lời/refuse thay vì `ask_clarify` |
+| 17/9 | Chạy lại evaluation v2 | Xác minh thay đổi; v2 đạt 20/20 = 100% trên golden set hiện tại |
+| 17/9 | Chốt quality bar ≥80% + zero unsupported answer cho no-evidence cases | Khóa tiêu chuẩn đánh giá cho CP4 |

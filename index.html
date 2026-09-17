@@ -575,16 +575,16 @@ QUY TẮC BẮT BUỘC:
 
 Cách phân biệt answered / clarify / no_evidence khi câu hỏi RỘNG (không hỏi về 1 khái niệm cụ thể):
 - Nếu các đoạn liên quan tìm được đều nói về CÙNG MỘT khía cạnh/hướng trả lời → answered, tổng hợp trực tiếp.
-- Nếu các đoạn liên quan tìm được nói về NHIỀU khía cạnh KHÁC NHAU của cùng chủ đề (ví dụ: vừa nói về vai trò trong quy trình sản phẩm, vừa nói về cách dùng trong trải nghiệm học tập) và câu hỏi KHÔNG chỉ rõ đang hỏi về khía cạnh nào → BẮT BUỘC clarify, hỏi lại đúng 1 câu để xác định khía cạnh học viên muốn hỏi. KHÔNG được tự chọn 1 khía cạnh rồi trả lời, KHÔNG được tổng hợp gộp tất cả các khía cạnh vào 1 câu trả lời chung chung.
-- Câu hỏi thiếu ĐỐI TƯỢNG cụ thể (ai/cái gì/khi nào/ở đâu) mà bản thân câu hỏi mở ra nhiều cách hiểu khác nhau (ví dụ "sản phẩm AI nên làm gì cho học viên?" — thiếu use case cụ thể) → clarify, KHÔNG trả lời chung chung, KHÔNG refuse.
-- CHỈ chọn no_evidence khi chủ đề hoàn toàn KHÔNG xuất hiện trong bất kỳ đoạn liên quan nào tìm được — không dùng no_evidence cho câu hỏi có liên quan nhưng thiếu phạm vi/đối tượng cụ thể (trường hợp đó luôn là clarify).
-- QUAN TRỌNG: không được hỏi lại quá tay. Câu hỏi RÕ RÀNG dù rộng (transcript có định nghĩa/nội dung trả lời thẳng được, không thể hiện sự phân nhánh nhiều khía cạnh) vẫn phải trả lời thẳng bằng "answered", KHÔNG được clarify. Chỉ clarify khi thực sự có nhiều cách hiểu khác nhau mà transcript thể hiện rõ sự phân nhánh đó.
+- Nếu các đoạn liên quan tìm được nói về NHIỀU khía cạnh KHÁC NHAU, độc lập với nhau, của cùng một chủ đề — và câu hỏi KHÔNG chỉ rõ đang hỏi về khía cạnh nào trong số đó → BẮT BUỘC clarify, hỏi lại đúng 1 câu để xác định khía cạnh học viên muốn hỏi. KHÔNG được tự chọn 1 khía cạnh rồi trả lời, KHÔNG được tổng hợp gộp tất cả các khía cạnh vào 1 câu trả lời chung chung.
+- Câu hỏi thiếu ĐỐI TƯỢNG hoặc PHẠM VI cụ thể (ai/cái gì/khi nào/ở đâu/cho ai) khiến bản thân câu hỏi mở ra nhiều cách hiểu khác nhau → clarify, KHÔNG trả lời chung chung, KHÔNG refuse.
+- CHỈ chọn no_evidence khi chủ đề hoàn toàn KHÔNG xuất hiện trong bất kỳ đoạn liên quan nào tìm được — không dùng no_evidence cho câu hỏi có liên quan nhưng thiếu phạm vi/đối tượng cụ thể (trường hợp đó luôn là clarify, không phải no_evidence).
+- QUAN TRỌNG: không được hỏi lại quá tay. Câu hỏi RÕ RÀNG dù diễn đạt rộng — nếu transcript có định nghĩa/nội dung trả lời thẳng được, không thể hiện sự phân nhánh nhiều khía cạnh độc lập — vẫn phải trả lời thẳng bằng "answered", KHÔNG được clarify. Chỉ clarify khi thực sự có nhiều cách hiểu khác nhau mà transcript thể hiện rõ sự phân nhánh đó.
 
-Ví dụ minh hoạ (few-shot để hiệu chỉnh, không phải danh sách đầy đủ):
-- "AI nên được dùng ở đâu?" → clarify (nhiều khía cạnh: quy trình sản phẩm vs trải nghiệm học tập).
-- "Tại sao product manager lại quan trọng?" → clarify (nhiều khía cạnh: vai trò trong team vs mục tiêu định hình sản phẩm).
-- "AI có thể giải quyết mọi vấn đề trong học tập không?" → clarify (thiếu ngữ cảnh/bài toán cụ thể để đánh giá, KHÔNG PHẢI no_evidence vì chủ đề có được đề cập trong transcript).
-- "Product Manager khác Project Manager ở điểm nào?" → answered (câu hỏi rõ ràng, transcript có định nghĩa rõ, không cần clarify dù đây cũng là câu hỏi khá rộng).
+Ví dụ minh hoạ CÁCH SUY LUẬN (dùng chủ đề giả định, không phải nội dung khóa học thật — chỉ để hiểu đúng KIỂU câu hỏi cần xử lý ra sao):
+- "X nên được áp dụng vào lúc nào?" — nếu transcript nói tới X ở nhiều giai đoạn/ngữ cảnh khác nhau (ví dụ vừa ở bước lập kế hoạch, vừa ở bước vận hành) mà câu hỏi không chỉ rõ giai đoạn nào → clarify.
+- "Vì sao vai trò Y lại quan trọng?" — nếu transcript nêu nhiều lý do thuộc các khía cạnh độc lập nhau (ví dụ vừa về mặt tổ chức, vừa về mặt chuyên môn) mà câu hỏi không xác định đang hỏi khía cạnh nào → clarify.
+- "Z có giải quyết được mọi trường hợp không?" — câu hỏi dạng tuyệt đối hoá ("mọi", "luôn luôn", "hoàn toàn") mà transcript chỉ nói Z phù hợp trong một số điều kiện nhất định, không phải mọi trường hợp → clarify để xác định điều kiện/ngữ cảnh cụ thể học viên đang hỏi, KHÔNG PHẢI no_evidence (vì chủ đề Z vẫn được đề cập).
+- "A khác B ở điểm gì?" — nếu transcript có so sánh trực tiếp, định nghĩa rõ ràng cho cả A và B → answered ngay, không cần clarify dù đây cũng là câu hỏi rộng.
 
 ĐỊNH DẠNG BẮT BUỘC: LUÔN trả lời bằng ĐÚNG MỘT object JSON hợp lệ, KHÔNG kèm markdown, KHÔNG kèm text nào khác ngoài JSON, theo đúng schema sau:
 {

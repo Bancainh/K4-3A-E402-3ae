@@ -28,7 +28,7 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
 
   * Khảo sát nội bộ học viên ngoài nhóm trong khóa, **n = 21**, thực hiện trong ngày **16–17/9/2026**.
 
-  * **71.4% (15/21)** cho biết gặp khó khăn từ mức "thỉnh thoảng" trở lên khi xác định câu trả lời có căn cứ trong tài liệu hay không; trong đó **28.6% (6/21)** gặp ở mức thường xuyên hoặc rất thường xuyên.
+  * **71.4% (15/21)** cho biết gặp khó khăn từ mức "thỉnh thoảng" trở lên khi xác định câu trả lời có căn cứ trong tài liệu hay không; trong đó **23.8% (5/21)** gặp ở mức thường xuyên hoặc rất thường xuyên.
 
   * **66.7% (14/21)** đã sử dụng AI ngoài như ChatGPT/Gemini như một workaround khi gặp vấn đề, nhưng các công cụ này không có đầy đủ ngữ cảnh của khóa học.
 
@@ -65,7 +65,7 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------ | ------- |
 | Khó xác định thông tin nằm ở slide/video nào                    | 38.1% (8/21) chọn đây là một nguyên nhân chính                                        | 76.2% cần tìm lại thông tin cụ thể ≥3 lần/tháng      | Tốn thời gian dò nhiều slide/video/tài liệu                        | Cao     |
 | Tài liệu quá dài, khó tìm đúng đoạn cần dùng                    | 33.3% (7/21) chọn đây là một nguyên nhân chính                                        | Xuất hiện như một trong hai root cause phổ biến nhất | Tốn thời gian đọc và tìm kiếm lại                                  | Cao     |
-| Khó biết câu trả lời từ AI ngoài có đúng và có căn cứ hay không | 71.4% gặp khó khăn từ mức thỉnh thoảng trở lên; 66.7% đã dùng AI ngoài làm workaround | 28.6% gặp vấn đề thường xuyên/rất thường xuyên       | 61.9% mất ≥5 phút/lần để tìm hoặc kiểm tra lại; 19.0% mất ≥10 phút | Cao     |
+| Khó biết câu trả lời từ AI ngoài có đúng và có căn cứ hay không | 71.4% gặp khó khăn từ mức thỉnh thoảng trở lên; 66.7% đã dùng AI ngoài làm workaround | 23.8% gặp vấn đề thường xuyên/rất thường xuyên       | 61.9% mất ≥5 phút/lần để tìm hoặc kiểm tra lại; 19.0% mất ≥10 phút | Cao     |
 
 * Ứng viên ĐÃ LOẠI + vì sao:
 

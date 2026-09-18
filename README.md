@@ -4,7 +4,7 @@
 
 ## 👥 Thành viên nhóm & Phân công vai trò
 
-**Lớp:** 3A · **Phòng:** _E402 · **Cụm:** C1 · **Track:** _A1
+**Lớp:** 3A · **Phòng:** E402 · **Cụm:** C1 · **Track:** A1
 
 | Họ và Tên | Mã Học Viên | Vai trò chính | Phần việc đảm nhiệm trong dự án |
 |---|---|---|---|

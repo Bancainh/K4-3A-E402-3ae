@@ -299,6 +299,67 @@
     margin: 0 2px;
   }
 
+  /* Mã trích dẫn [Txx-NNN] bấm được -> hiện popup nội dung đoạn transcript gốc */
+  .citation-chip {
+    display: inline-block;
+    background: #d6f0e0;
+    color: var(--green);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin: 0 2px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .citation-chip:hover { background: #bfe8d3; }
+
+  .citation-popup {
+    position: fixed;
+    z-index: 1000;
+    width: max-content;
+    max-width: min(340px, calc(100vw - 24px));
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    padding: 10px 12px;
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+  .citation-popup-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .citation-popup-title {
+    font-weight: 700;
+    color: var(--green);
+    font-size: 12px;
+  }
+  .citation-popup-close {
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--text-dim);
+    padding: 0 2px;
+    flex: none;
+  }
+  .citation-popup-close:hover { color: var(--text); }
+  .citation-popup-body {
+    color: var(--text);
+    white-space: pre-wrap;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+
   .status-pill {
     display: inline-flex;
     align-items: center;
@@ -449,14 +510,14 @@
     <div class="chat-thread">
       <div class="bubble user" id="hp-user-question">Vì sao kỹ năng xác định bài toán từ yêu cầu mơ hồ lại quan trọng?</div>
       <div class="bubble ai evidence" id="hp-answer">
-        Theo transcript Day 2 (sáng), đoạn <span class="citation-tag">T01-001</span>, đây là một trong những
+        Theo transcript Day 2 (sáng), đoạn <span class="citation-chip" data-id="[T01-001]">[T01-001]</span>, đây là một trong những
         kỹ năng quan trọng và đang thiếu nhất — khả năng xác định ra một bài toán từ một yêu cầu rất mơ hồ,
         hoặc tìm được bài toán đáng làm trong doanh nghiệp rồi bóc tách cho team phát triển.
       </div>
     </div>
 
     <div class="source-box">
-      <strong>Nguồn trích dẫn:</strong> <span id="hp-sources">T01-001</span>
+      <strong>Nguồn trích dẫn:</strong> <span id="hp-sources"><span class="citation-chip" data-id="[T01-001]">[T01-001]</span></span>
     </div>
 
     <div class="feedback-row">
@@ -868,11 +929,128 @@ Ví dụ minh hoạ CÁCH SUY LUẬN (dùng chủ đề giả định, không ph
     div.textContent = str == null ? "" : String(str);
     return div.innerHTML;
   }
-  function highlightCitations(html) {
-    return html.replace(/\[T\d{2}-\d{3}\]/g, function (m) {
-      return '<span class="citation-tag">' + m.slice(1, -1) + "</span>";
+  // Mã trích dẫn có thể tới từ 2 nguồn: text tự do trong "answer" (dạng "[Txx-NNN]",
+  // có ngoặc vuông) hoặc mảng "citations" (dạng "Txx-NNN", KHÔNG ngoặc vuông theo
+  // schema hiện tại) -> chuẩn hoá cả 2 về cùng 1 mã để tra cứu allSegments.
+  function extractCitationCode(str) {
+    const m = String(str || "").match(/T\d{2}-\d{3}/);
+    return m ? m[0] : null;
+  }
+
+  function citationChipHtml(rawId) {
+    const code = extractCitationCode(rawId);
+    if (!code) return escapeHtml(rawId);
+    return '<span class="citation-chip" data-id="[' + code + ']">[' + code + "]</span>";
+  }
+
+  // Quét text đã escape, thay mọi mã [Txx-NNN] bằng chip bấm được (dùng cho "answer").
+  function formatAnswerWithCitations(text) {
+    return escapeHtml(text).replace(/\[T\d{2}-\d{3}\]/g, function (m) {
+      return citationChipHtml(m);
     });
   }
+
+  // Dựng danh sách chip bấm được từ mảng "citations" (dùng cho khối "Nguồn trích dẫn").
+  function formatCitationsList(citations) {
+    if (!citations || !citations.length) return "(không có)";
+    return citations.map(citationChipHtml).join(" ");
+  }
+
+  // ---- Popup hiện nội dung đoạn transcript gốc khi bấm vào 1 citation-chip ----
+  let citationPopupEl = null;
+  function ensureCitationPopup() {
+    if (citationPopupEl) return citationPopupEl;
+    const el = document.createElement("div");
+    el.className = "citation-popup";
+    el.hidden = true;
+    el.innerHTML =
+      '<div class="citation-popup-header">' +
+        '<span class="citation-popup-title"></span>' +
+        '<button type="button" class="citation-popup-close" aria-label="Đóng">&times;</button>' +
+      "</div>" +
+      '<div class="citation-popup-body"></div>';
+    document.body.appendChild(el);
+    el.querySelector(".citation-popup-close").addEventListener("click", function (e) {
+      e.stopPropagation();
+      hideCitationPopup();
+    });
+    citationPopupEl = el;
+    return el;
+  }
+
+  function hideCitationPopup() {
+    if (citationPopupEl) citationPopupEl.hidden = true;
+  }
+
+  function positionCitationPopup(popup, anchorEl) {
+    const margin = 8;
+    const rect = anchorEl.getBoundingClientRect();
+    const vw = document.documentElement.clientWidth;
+    const vh = document.documentElement.clientHeight;
+    const popupWidth = popup.offsetWidth || 300;
+    const popupHeight = popup.offsetHeight || 100;
+
+    let left = rect.left;
+    if (left + popupWidth > vw - margin) left = Math.max(margin, vw - margin - popupWidth);
+    if (left < margin) left = margin;
+
+    let top = rect.bottom + 6;
+    if (top + popupHeight > vh - margin) {
+      top = rect.top - popupHeight - 6; // không đủ chỗ phía dưới -> hiện lên trên chip
+      if (top < margin) top = margin;
+    }
+
+    popup.style.left = left + "px";
+    popup.style.top = top + "px";
+  }
+
+  async function showCitationPopup(chipEl) {
+    const popup = ensureCitationPopup();
+    const rawId = chipEl.getAttribute("data-id") || "";
+    const code = extractCitationCode(rawId);
+
+    popup.querySelector(".citation-popup-title").textContent = rawId;
+    const bodyEl = popup.querySelector(".citation-popup-body");
+    bodyEl.textContent = "Đang tải...";
+    popup.hidden = false;
+    positionCitationPopup(popup, chipEl);
+
+    let segments;
+    try {
+      segments = await ensureSegmentsLoaded();
+    } catch (err) {
+      console.error("[VLearn Tutor][citation] Không tải được transcripts-data.json:", err);
+      bodyEl.textContent = "Không tìm thấy nội dung đoạn này.";
+      positionCitationPopup(popup, chipEl);
+      return;
+    }
+
+    const seg = code ? segments.find(function (s) { return extractCitationCode(s.id) === code; }) : null;
+    if (!seg) {
+      console.warn("[VLearn Tutor][citation] Không tìm thấy đoạn cho mã:", rawId);
+      bodyEl.textContent = "Không tìm thấy nội dung đoạn này.";
+      positionCitationPopup(popup, chipEl);
+      return;
+    }
+
+    popup.querySelector(".citation-popup-title").textContent = seg.id + " · " + seg.file;
+    bodyEl.textContent = seg.text;
+    positionCitationPopup(popup, chipEl);
+  }
+
+  // Event delegation trên document: hoạt động với MỌI citation-chip được render sau này,
+  // không cần gắn listener riêng mỗi lần render câu trả lời mới.
+  document.addEventListener("click", function (e) {
+    const chip = e.target.closest ? e.target.closest(".citation-chip") : null;
+    if (chip) {
+      e.stopPropagation();
+      showCitationPopup(chip);
+      return;
+    }
+    if (citationPopupEl && !citationPopupEl.hidden && !citationPopupEl.contains(e.target)) {
+      hideCitationPopup();
+    }
+  });
   function markLive(tagId, text) {
     const el = document.getElementById(tagId);
     el.textContent = text || "🔴 LIVE — Gemini API (grounded theo transcript Day 2 sáng)";
@@ -957,10 +1135,10 @@ Ví dụ minh hoạ CÁCH SUY LUẬN (dùng chủ đề giả định, không ph
 
   function renderHappyPath(parsed) {
     document.getElementById("hp-user-question").textContent = originQuestion || "(không rõ câu hỏi)";
-    const answerHtml = highlightCitations(escapeHtml(parsed.answer || ""));
+    const answerHtml = formatAnswerWithCitations(parsed.answer || "");
     document.getElementById("hp-answer").innerHTML = answerHtml;
     const citations = Array.isArray(parsed.citations) ? parsed.citations : [];
-    document.getElementById("hp-sources").textContent = citations.length ? citations.join(", ") : "(không có)";
+    document.getElementById("hp-sources").innerHTML = formatCitationsList(citations);
     markLive("hp-tag");
     document.getElementById("fb-up").classList.remove("picked");
     document.getElementById("fb-down").classList.remove("picked");
@@ -1091,7 +1269,7 @@ Ví dụ minh hoạ CÁCH SUY LUẬN (dùng chủ đề giả định, không ph
       const aiBubble = document.createElement("div");
       if (parsed.status === "answered") {
         aiBubble.className = "bubble ai evidence";
-        aiBubble.innerHTML = highlightCitations(escapeHtml(parsed.answer || ""));
+        aiBubble.innerHTML = formatAnswerWithCitations(parsed.answer || "");
         lastAnsweredSnapshot = { question: originQuestion, answerHtml: aiBubble.innerHTML };
       } else if (parsed.status === "clarify") {
         aiBubble.className = "bubble ai low-confidence";

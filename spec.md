@@ -234,12 +234,15 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
 | ---- | --------: | ---: | ---: | --------: | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | v1   |        20 |   14 |    6 |       70% | Baseline. Các lỗi chủ yếu nằm ở nhóm ambiguous và weak-context: hệ thống có xu hướng trả lời hoặc từ chối ngay thay vì yêu cầu người dùng làm rõ. |
 | v2   |        20 |   20 |    0 |      100% | Sau khi điều chỉnh prompt/decision logic để xử lý tốt hơn các trường hợp ambiguous và weak-context bằng `ask_clarify`.                            |
+| v3  | Chưa hoàn tất  | —  | —  | N/A  | Regression test sau thay đổi citation UX. Lượt chạy bị gián đoạn bởi Gemini API HTTP 429 (quota/rate limit), nên không sử dụng v3 để tính pass rate. Lượt evaluation hoàn chỉnh gần nhất vẫn là v2. |
 
 * Kết luận:
 
   Lượt **v1 đạt 70%**, thấp hơn quality bar 80%. Phân tích lỗi cho thấy failure mode chính nằm ở khả năng nhận diện câu hỏi mơ hồ và context chưa đủ mạnh.
 
   Sau khi điều chỉnh cách hệ thống xử lý các trường hợp này, **v2 đạt 100% (20/20 cases)** và vượt quality bar đã đặt ra.
+  
+  Sau validation P2, nhóm bổ sung khả năng mở evidence trực tiếp từ citation. Nhóm đã thử chạy regression v3 để kiểm tra thay đổi này, nhưng batch evaluation không hoàn tất do Gemini API trả HTTP 429 vì giới hạn quota. Vì vậy nhóm không suy diễn kết quả từ lượt chạy chưa hoàn chỉnh; kết quả đầy đủ gần nhất vẫn là v2 với 20/20 cases.
 
 ## §8. Phân công & kế hoạch
 
@@ -256,20 +259,19 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
 
   Trong khảo sát có **18/21 người (85.7%)** cho biết sẵn sàng thử prototype.
 
-  Nhóm sẽ chọn ít nhất 5 người ngoài nhóm từ pool willing users này để thực hiện validation tại CP5.
-
 * Kế hoạch validation:
 
-  CP5 cho ít nhất 5 người ngoài nhóm thực hiện cùng một task.
-  
+  Nhóm đã thực hiện validation với 2 người ngoài nhóm từ pool willing users trước CP5.
+  Do giới hạn thời gian, nhóm chốt validation ở 2 participant và giữ nguyên log thực tế,
+  không bổ sung dữ liệu giả.
 
-  Ghi lại:
 
-  * người dùng đã làm gì;
-  * họ bị kẹt ở đâu;
-  * quote nguyên văn;
-  * task pass/fail;
-  * nhóm quyết định sửa gì sau observation.
+    Nhóm ghi lại:
+    * người dùng đã làm gì;
+    * họ bị kẹt ở đâu;
+    * quote nguyên văn;
+    * task pass/fail;
+    * nhóm quyết định sửa gì sau observation.
 
 
 - Multi-prototype:
@@ -288,4 +290,6 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
 | 17/9 | Chốt quality bar ≥80% + zero unsupported answer cho no-evidence cases | Khóa tiêu chuẩn đánh giá cho CP4 |
 | 17/9 | Hoàn thiện evidence survey n=21 + ≥5 quotes nguyên văn | 15/21 gặp pain từ mức thỉnh thoảng trở lên; 14/21 dùng AI ngoài; 18/21 willing users |
 | 18/9 | Ưu tiên cải thiện citation thay vì animation/chat history | Validation P2 cho thấy citation có mã nguồn nhưng không click được, khiến người dùng vẫn phải tự tìm nguồn; đây là vấn đề trực tiếp với core value kiểm chứng câu trả lời |
-| 18/9 | CP5 validation hoàn thành 2/5 participant dự kiến | Do giới hạn thời gian trước checkpoint; giữ nguyên log thực tế, không bổ sung dữ liệu giả |
+| 18/9 | Chốt validation thực tế với 2 participant | Do giới hạn thời gian trước checkpoint; giữ nguyên log thực tế, không bổ sung dữ liệu giả |
+| 18/9 | Hoàn thiện click citation → hiển thị supporting evidence | Triển khai product decision từ validation P2; người dùng giờ có thể mở trực tiếp đoạn evidence tương ứng thay vì tự tìm mã nguồn
+| 18/9 | Thử regression evaluation v3 sau thay đổi citation UX | Batch test bị gián đoạn bởi Gemini API HTTP 429 do quota/rate limit; không dùng lượt chạy chưa hoàn chỉnh để tính pass rate, giữ v2 là lượt evaluation hoàn chỉnh gần nhất

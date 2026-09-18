@@ -287,3 +287,5 @@ Loại: [x] Tối ưu tính năng có sẵn  [ ] Tính năng mới
 | 17/9 | Chạy lại evaluation v2 | Xác minh thay đổi; v2 đạt 20/20 = 100% trên golden set hiện tại |
 | 17/9 | Chốt quality bar ≥80% + zero unsupported answer cho no-evidence cases | Khóa tiêu chuẩn đánh giá cho CP4 |
 | 17/9 | Hoàn thiện evidence survey n=21 + ≥5 quotes nguyên văn | 15/21 gặp pain từ mức thỉnh thoảng trở lên; 14/21 dùng AI ngoài; 18/21 willing users |
+| 18/9 | Ưu tiên cải thiện citation thay vì animation/chat history | Validation P2 cho thấy citation có mã nguồn nhưng không click được, khiến người dùng vẫn phải tự tìm nguồn; đây là vấn đề trực tiếp với core value kiểm chứng câu trả lời |
+| 18/9 | CP5 validation hoàn thành 2/5 participant dự kiến | Do giới hạn thời gian trước checkpoint; giữ nguyên log thực tế, không bổ sung dữ liệu giả |
